@@ -104,7 +104,7 @@ type Rs274ngc_i interface {
 	Open(filename string) inc.STATUS
 	// read the command
 	Read(command []byte) inc.STATUS
-
+	Close() inc.STATUS
 	// execute a line of NC code
 	Execute() int
 	// stop running
@@ -135,7 +135,7 @@ type Rs274ngc_i interface {
 	Line_length() uint
 	// copy the text of the most recently read line into the line_text array,
 	// but stop at max_size if the text is longer
-	Line_text(line_text []byte, max_size uint)
+	LineText() string
 }
 
 var TEST Rs274ngc_i = &rs274ngc_t{}
@@ -245,6 +245,30 @@ func (cnc *rs274ngc_t) Open( /* ARGUMENTS                                     */
 	cnc._setup.filename = filename
 	cnc._setup.sequence_number = 0
 	cnc.reset()
+	return inc.RS274NGC_OK
+}
+
+/***********************************************************************/
+
+/* rs274ngc_close
+
+   Returned Value: int (RS274NGC_OK)
+
+   Side Effects:
+   The NC-code file is closed if open.
+   The _setup world model is reset.
+
+   Called By: external programs
+
+*/
+
+func (cnc *rs274ngc_t) Close() inc.STATUS {
+	if cnc._setup.file_pointer != nil {
+		cnc._setup.file_pointer.Close()
+		cnc._setup.file_pointer = nil
+	}
+	cnc.reset()
+
 	return inc.RS274NGC_OK
 }
 
@@ -1225,21 +1249,8 @@ last non-null character.
 
 */
 
-func (cnc *rs274ngc_t) Line_text( /* ARGUMENTS                            */
-	line_text []byte, /* string: to copy line into            */
-	max_size uint) { /* maximum number of characters to copy */
-
-	var n = 0
-
-	the_text := cnc._setup.linetext
-	for n = 0; n < int(max_size-1); n++ {
-		if the_text[n] != 0 {
-			line_text[n] = the_text[n]
-		} else {
-			break
-		}
-	}
-	line_text[n] = 0
+func (cnc *rs274ngc_t) LineText() string {
+	return cnc._setup.linetext
 }
 
 /***********************************************************************/

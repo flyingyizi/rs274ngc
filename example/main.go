@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -36,6 +37,7 @@ import (
    1A. To interpret from the keyboard, enter:
 
    rs274abc
+
 
    ***********************************************************************
 
@@ -133,15 +135,17 @@ func main() {
 	}
 
 	var (
-		choice int
-		//do_next                      = 2 /* 2=stop */
+		choice       int
+		do_next                      = 2 /* 2=stop */
 		block_delete rs274ngc.ON_OFF = rs274ngc.OFF
-		//print_stack  rs274ngc.ON_OFF = rs274ngc.OFF
-		tool_flag    = 0
-		default_name = "rs274ngc.var"
+		print_stack  rs274ngc.ON_OFF = rs274ngc.OFF
+		tool_flag                    = 0
+		default_name                 = "rs274ngc.var"
+		//err          error
+		//_outfile     = os.Stdout /* may be reset below */
+		status int
 	)
 	_parameter_file_name := default_name
-	//todo _outfile = stdout;                       /* may be reset below */
 
 	for {
 		fmt.Println("enter a number:")
@@ -167,11 +171,10 @@ func main() {
 			}
 
 		} else if choice == 3 {
-			//TODO
-			//if (read_tool_file("") != 0) {
-			//   return
-			//}
-			//tool_flag = 1;
+			if read_tool_file("") != 0 {
+				return
+			}
+			tool_flag = 1
 		} else if choice == 4 {
 			block_delete = inc.If((block_delete == rs274ngc.OFF), rs274ngc.ON, rs274ngc.OFF).(rs274ngc.ON_OFF)
 		} else if choice == 5 {
@@ -187,34 +190,33 @@ func main() {
 		}
 	}
 
-	//TODO
 	if len(os.Args) == 3 {
-
-		_outfile = fopen(argv[2], "w")
-		if _outfile == NULL {
-			fmt.Println("could not open output file %s", argv[2])
-			return
-		}
+		//TODO
+		//_outfile, err = os.OpenFile(os.Args[2], os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		//if err != nil {
+		//	fmt.Println("could not open output file %s", os.Args[2])
+		//	return
+		//}
+	}
+	if status := rs274ngc.TEST.Init(); status != inc.RS274NGC_OK {
+		return
 	}
 
-	//	status := rs274ngc.TEST.Init()
-	//	if status != inc.RS274NGC_OK {
-	//		return
-	//	}
-	//
-	//	if argc == 1 {
-	//		status = interpret_from_keyboard(block_delete, print_stack)
-	//	} else { /* if (argc IS 2 or argc IS 3) */
-	//		status = rs274ngc.TEST.Open(argv[1])
-	//		if status != inc.RS274NGC_OK { /* do not need to close since not open */
-	//			report_error(status, print_stack)
-	//			exit(1)
-	//		}
-	//		status = interpret_from_file(do_next, block_delete, print_stack)
-	//		rs274ngc_file_name(buffer, 5)  /* called to exercise the function */
-	//		rs274ngc_file_name(buffer, 79) /* called to exercise the function */
-	//		rs274ngc_close()
-	//	}
+	//TODO
+	if len(os.Args) == 1 {
+		status = interpret_from_keyboard(block_delete, print_stack)
+	} else { /* if (argc == 2 or argc == 3) */
+		status = rs274ngc.TEST.Open(os.Args[1])
+		if status != inc.RS274NGC_OK { /* do not need to close since not open */
+			report_error(status, print_stack)
+			return
+		}
+		status = interpret_from_file(do_next, block_delete, print_stack)
+		//todo rs274ngc_file_name(buffer, 5)  /* called to exercise the function */
+		//todo rs274ngc_file_name(buffer, 79) /* called to exercise the function */
+		rs274ngc.TEST.Close()
+
+	}
 	//	rs274ngc_line_length()         /* called to exercise the function */
 	//	rs274ngc_sequence_number()     /* called to exercise the function */
 	//	rs274ngc_active_g_codes(gees)  /* called to exercise the function */
@@ -229,6 +231,105 @@ var (
 	_tools    [inc.CANON_TOOL_MAX]inc.CANON_TOOL_TABLE /*Not static. Driver writes */
 
 )
+
+/*********************************************************************/
+
+/* interpret_from_file
+
+   Returned Value: int (0 or 1)
+   If any of the following errors occur, this returns 1.
+   Otherwise, it returns 0.
+   1. rs274ngc_read returns something other than RS274NGC_OK or
+   RS274NGC_EXECUTE_FINISH, no_stop is off, and the user elects
+   not to continue.
+   2. rs274ngc_execute returns something other than RS274NGC_OK,
+   EXIT, or RS274NGC_EXECUTE_FINISH, no_stop is off, and the user
+   elects not to continue.
+
+   Side Effects:
+   An open NC-program file is interpreted.
+
+   Called By:
+   main
+
+   This emulates the way the EMC system uses the interpreter.
+
+   If the do_next argument is 1, this goes into MDI mode if an error is
+   found. In that mode, the user may (1) enter code or (2) enter "quit" to
+   get out of MDI. Once out of MDI, this asks the user whether to continue
+   interpreting the file.
+
+   If the do_next argument is 0, an error does not stop interpretation.
+
+   If the do_next argument is 2, an error stops interpretation.
+
+*/
+
+func interpret_from_file( /* ARGUMENTS                  */
+	do_next int, /* what to do if error        */
+	block_delete, /* switch which is ON or OFF  */
+	print_stack rs274ngc.ON_OFF) inc.STATUS { /* option which is ON or OFF  */
+
+	var (
+		status inc.STATUS
+	)
+	//char line[RS274NGC_TEXT_SIZE];
+	stdin := bufio.NewReader(os.Stdin)
+
+	for {
+		status = rs274ngc.TEST.Read(nil)
+		if (status == inc.RS274NGC_EXECUTE_FINISH) && (block_delete == rs274ngc.ON) {
+			continue
+		} else if status == inc.RS274NGC_ENDFILE {
+			break
+		}
+
+		if (status != inc.RS274NGC_OK) && // should not be EXIT
+			(status != inc.RS274NGC_EXECUTE_FINISH) {
+			report_error(status, print_stack)
+			if (status == inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN) ||
+				(do_next == 2) { /* 2 means stop */
+				status = 1
+				break
+			} else if do_next == 1 { /* 1 means MDI */
+				fmt.Fprintf(os.Stderr, "starting MDI\n")
+				interpret_from_keyboard(block_delete, print_stack)
+				fmt.Fprintf(os.Stderr, "continue program? y/n =>")
+
+				line, _, _ := stdin.ReadLine()
+				if line[0] != 'y' {
+					status = 1
+					break
+				} else {
+					continue
+				}
+			} else { /* if do_next == 0 -- 0 means continue */
+				continue
+			}
+		}
+		status = rs274ngc.TEST.Execute()
+		if (status != inc.RS274NGC_OK) &&
+			(status != inc.RS274NGC_EXIT) &&
+			(status != inc.RS274NGC_EXECUTE_FINISH) {
+			report_error(status, print_stack)
+			status = 1
+			if do_next == 1 { /* 1 means MDI */
+				fmt.Fprintf(os.Stderr, "starting MDI\n")
+				interpret_from_keyboard(block_delete, print_stack)
+				fmt.Fprintf(os.Stderr, "continue program? y/n =>")
+				line, _, _ := stdin.ReadLine()
+				if line[0] != 'y' {
+					break
+				}
+			} else if do_next == 2 { /* 2 means stop */
+				break
+			}
+		} else if status == inc.RS274NGC_EXIT {
+			break
+		}
+	}
+	return inc.If(status == 1, 1, 0).(int)
+}
 
 /************************************************************************/
 
@@ -307,8 +408,8 @@ func read_tool_file(file_name string) int { /* name of tool file */
 
 	reader := bufio.NewReader(tool_file_port)
 	for {
-		if l, isprefix, _ := reader.ReadLine(); isprefix == true {
-
+		if l, _, e := reader.ReadLine(); e != nil {
+			fmt.Println("Bad tool file format\n")
 		} else if len(l) == 0 {
 			break
 		}
@@ -323,8 +424,8 @@ func read_tool_file(file_name string) int { /* name of tool file */
 		if l, _, err = reader.ReadLine(); err != nil {
 			break
 		}
-		if n, _ := fmt.Sscanf(string(l), "%d %d %lf %lf", &slot, &tool_id, &offset, &diameter); n < 4 {
-			fmt.Println("Bad input line \"%s\" in tool file", l)
+		if n, _ := fmt.Sscanf(string(l), "%d %d %f %f", &slot, &tool_id, &offset, &diameter); n < 4 {
+			fmt.Println("Bad input line \"%s\" in tool file", string(l))
 			return -1
 		}
 
@@ -338,4 +439,93 @@ func read_tool_file(file_name string) int { /* name of tool file */
 
 	}
 	return 0
+}
+
+/***********************************************************************/
+
+/* interpret_from_keyboard
+
+   Returned Value: int (0)
+
+   Side effects:
+   Lines of NC code entered by the user are interpreted.
+
+   Called by:
+   interpret_from_file
+   main
+
+   This prompts the user to enter a line of rs274 code. When the user
+   hits <enter> at the end of the line, the line is executed.
+   Then the user is prompted to enter another line.
+
+   Any canonical commands resulting from executing the line are printed
+   on the monitor (stdout).  If there is an error in reading or executing
+   the line, an error message is printed on the monitor (stderr).
+
+   To exit, the user must enter "quit" (followed by a carriage return).
+
+*/
+func interpret_from_keyboard( /* ARGUMENTS                 */
+	block_delete rs274ngc.ON_OFF, /* switch which is ON or OFF */
+	print_stack rs274ngc.ON_OFF) int { /* option which is ON or OFF */
+
+	//char line[RS274NGC_TEXT_SIZE];
+	//int status;
+
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Println("READ => ")
+		line, _, _ := reader.ReadLine()
+
+		if bytes.ContainsAny(line, "quit") {
+			return 0
+		}
+
+		status := rs274ngc.TEST.Read(line)
+		if (status == inc.RS274NGC_EXECUTE_FINISH) && (block_delete == rs274ngc.ON) {
+
+		} else if status == inc.RS274NGC_ENDFILE {
+
+		} else if (status != inc.RS274NGC_EXECUTE_FINISH) &&
+			(status != inc.RS274NGC_OK) {
+			report_error(status, print_stack)
+		} else {
+			status = rs274ngc.TEST.Execute()
+			if (status == inc.RS274NGC_EXIT) ||
+				(status == inc.RS274NGC_EXECUTE_FINISH) {
+
+			} else if status != inc.RS274NGC_OK {
+				report_error(status, print_stack)
+
+			}
+		}
+	}
+}
+
+func report_error( /* ARGUMENTS                            */
+	error_code int, /* the code number of the error message */
+	print_stack rs274ngc.ON_OFF) { /* print stack if ON, otherwise not     */
+
+	//char buffer[RS274NGC_TEXT_SIZE];
+	//int k;
+
+	buffer := inc.Rs274ngc_error_text(error_code) /* for coverage of code */
+	if len(buffer) == 0 {
+		fmt.Fprintf(os.Stderr, "%s\n", "Unknown error, bad error code")
+	} else {
+		fmt.Fprintf(os.Stderr, "%s\n", buffer)
+	}
+
+	fmt.Fprintf(os.Stderr, "%s\n", rs274ngc.TEST.LineText())
+
+	//	if print_stack == rs274ngc.ON {
+	//		for k := 0; ; k++ {
+	//			rs274ngc_stack_name(k, buffer, RS274NGC_TEXT_SIZE)
+	//			if (buffer[0] != 0); fprintf(stderr, "%s\n", buffer) {
+	//
+	//			} else {
+	//				break
+	//			}
+	//		}
+	//	}
 }

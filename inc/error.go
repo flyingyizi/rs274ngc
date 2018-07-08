@@ -248,7 +248,7 @@ var _rs274ngc_errors = map[int]string{
 
 */
 
-func RS274ngc_error_text( /* ARGUMENTS                            */
+func Rs274ngc_error_text( /* ARGUMENTS                            */
 	error_code int) string { /* code number of error                 */
 
 	if s, ok := _rs274ngc_errors[error_code]; ok {
