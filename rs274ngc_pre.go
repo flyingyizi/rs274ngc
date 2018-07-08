@@ -143,7 +143,7 @@ var TEST Rs274ngc_i = &rs274ngc_t{}
 type rs274ngc_t struct {
 	_setup Setup_t
 
-	canon cannon_i
+	canon inc.Canon_i
 }
 
 /***********************************************************************/
@@ -742,6 +742,7 @@ func (cnc *rs274ngc_t) active_settings( /* ARGUMENTS                      */
    always calls SET_FEED_REFERENCE(CANON_XYZ).
 
 */
+
 func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 
 	//int k;                                    // starting index in parameters of origin offsets
@@ -753,7 +754,7 @@ func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 		filename []byte
 	) // short name for _setup.parameters
 
-	inc.INIT_CANON()
+	cnc.canon.INIT_CANON()
 	cnc._setup.length_units = cnc.canon.GET_EXTERNAL_LENGTH_UNIT_TYPE()
 	cnc.canon.USE_LENGTH_UNITS(cnc._setup.length_units)
 	cnc.canon.GET_EXTERNAL_PARAMETER_FILE_NAME(filename, inc.RS274NGC_TEXT_SIZE)
@@ -1277,7 +1278,7 @@ func (cnc *rs274ngc_t) load_tool_table() inc.STATUS { /* NO ARGUMENTS */
 	}
 
 	for ; n <= inc.CANON_TOOL_MAX; n++ {
-		cnc._setup.tool_table[n] = CANON_TOOL_TABLE{}
+		cnc._setup.tool_table[n] = inc.CANON_TOOL_TABLE{}
 
 	}
 
@@ -1643,13 +1644,13 @@ func (cnc *rs274ngc_t) convert_m() inc.STATUS {
 
 	if cnc._setup.block1.m_modes[7] == 3 {
 		cnc.canon.START_SPINDLE_CLOCKWISE()
-		cnc._setup.spindle_turning = CANON_CLOCKWISE
+		cnc._setup.spindle_turning = inc.CANON_CLOCKWISE
 	} else if cnc._setup.block1.m_modes[7] == 4 {
 		cnc.canon.START_SPINDLE_COUNTERCLOCKWISE()
-		cnc._setup.spindle_turning = CANON_COUNTERCLOCKWISE
+		cnc._setup.spindle_turning = inc.CANON_COUNTERCLOCKWISE
 	} else if cnc._setup.block1.m_modes[7] == 5 {
 		cnc.canon.STOP_SPINDLE_TURNING()
-		cnc._setup.spindle_turning = CANON_STOPPED
+		cnc._setup.spindle_turning = inc.CANON_STOPPED
 	}
 
 	if cnc._setup.block1.m_modes[8] == 7 {
@@ -1761,7 +1762,7 @@ func (cnc *rs274ngc_t) convert_tool_change() inc.STATUS {
 
 	cnc.canon.CHANGE_TOOL(cnc._setup.selected_tool_slot)
 	cnc._setup.current_slot = cnc._setup.selected_tool_slot
-	cnc._setup.spindle_turning = CANON_STOPPED
+	cnc._setup.spindle_turning = inc.CANON_STOPPED
 
 	return inc.RS274NGC_OK
 }
@@ -1943,21 +1944,21 @@ func (cnc *rs274ngc_t) convert_set_plane( /* ARGUMENTS                    */
 
 	//static char name[] = "convert_set_plane";
 	if g_code == inc.G_17 {
-		cnc.canon.SELECT_PLANE(CANON_PLANE_XY)
-		cnc._setup.plane = CANON_PLANE_XY
+		cnc.canon.SELECT_PLANE(inc.CANON_PLANE_XY)
+		cnc._setup.plane = inc.CANON_PLANE_XY
 	} else if g_code == inc.G_18 {
 		if cnc._setup.cutter_comp_side != inc.CANON_SIDE_OFF {
 			return inc.NCE_CANNOT_USE_XZ_PLANE_WITH_CUTTER_RADIUS_COMP
 		}
-		cnc.canon.SELECT_PLANE(CANON_PLANE_XZ)
-		cnc._setup.plane = CANON_PLANE_XZ
+		cnc.canon.SELECT_PLANE(inc.CANON_PLANE_XZ)
+		cnc._setup.plane = inc.CANON_PLANE_XZ
 	} else if g_code == inc.G_19 {
 		if cnc._setup.cutter_comp_side != inc.CANON_SIDE_OFF {
 			return inc.NCE_CANNOT_USE_YZ_PLANE_WITH_CUTTER_RADIUS_COMP
 		}
 
-		cnc.canon.SELECT_PLANE(CANON_PLANE_YZ)
-		cnc._setup.plane = CANON_PLANE_YZ
+		cnc.canon.SELECT_PLANE(inc.CANON_PLANE_YZ)
+		cnc._setup.plane = inc.CANON_PLANE_YZ
 	} else {
 		return inc.NCE_BUG_CODE_NOT_G17_G18_OR_G19
 	}
@@ -2015,9 +2016,9 @@ func (cnc *rs274ngc_t) convert_length_units( /* ARGUMENTS                    */
 	}
 
 	if g_code == inc.G_20 {
-		cnc.canon.USE_LENGTH_UNITS(CANON_UNITS_INCHES)
-		if cnc._setup.length_units != CANON_UNITS_INCHES {
-			cnc._setup.length_units = CANON_UNITS_INCHES
+		cnc.canon.USE_LENGTH_UNITS(inc.CANON_UNITS_INCHES)
+		if cnc._setup.length_units != inc.CANON_UNITS_INCHES {
+			cnc._setup.length_units = inc.CANON_UNITS_INCHES
 			cnc._setup.current.X = (cnc._setup.current.X * inc.INCH_PER_MM)
 			cnc._setup.current.Y = (cnc._setup.current.Y * inc.INCH_PER_MM)
 			cnc._setup.current.Z = (cnc._setup.current.Z * inc.INCH_PER_MM)
@@ -2035,9 +2036,9 @@ func (cnc *rs274ngc_t) convert_length_units( /* ARGUMENTS                    */
 				(cnc._setup.origin_offset.Z * inc.INCH_PER_MM)
 		}
 	} else if g_code == inc.G_21 {
-		cnc.canon.USE_LENGTH_UNITS(CANON_UNITS_MM)
-		if cnc._setup.length_units != CANON_UNITS_MM {
-			cnc._setup.length_units = CANON_UNITS_MM
+		cnc.canon.USE_LENGTH_UNITS(inc.CANON_UNITS_MM)
+		if cnc._setup.length_units != inc.CANON_UNITS_MM {
+			cnc._setup.length_units = inc.CANON_UNITS_MM
 			cnc._setup.current.X = (cnc._setup.current.X * inc.MM_PER_INCH)
 			cnc._setup.current.Y = (cnc._setup.current.Y * inc.MM_PER_INCH)
 			cnc._setup.current.Z = (cnc._setup.current.Z * inc.MM_PER_INCH)
@@ -2184,7 +2185,7 @@ func (cnc *rs274ngc_t) convert_cutter_compensation_on( /* ARGUMENTS             
 
 	//static char name[] = "convert_cutter_compensation_on";
 
-	if cnc._setup.plane != CANON_PLANE_XY {
+	if cnc._setup.plane != inc.CANON_PLANE_XY {
 		return inc.NCE_CANNOT_TURN_CUTTER_RADIUS_COMP_ON_OUT_OF_XY_PLANE
 	}
 
@@ -2193,7 +2194,7 @@ func (cnc *rs274ngc_t) convert_cutter_compensation_on( /* ARGUMENTS             
 	}
 
 	index := inc.If(cnc._setup.block1.d_number != -1, cnc._setup.block1.d_number, cnc._setup.current_slot).(int)
-	radius := ((cnc._setup.tool_table[index].diameter) / 2.0)
+	radius := ((cnc._setup.tool_table[index].Diameter) / 2.0)
 
 	if radius < 0.0 { /* switch side & make radius positive if radius negative */
 		radius = -radius
@@ -2266,7 +2267,7 @@ func (cnc *rs274ngc_t) convert_tool_length_offset( /* ARGUMENTS                 
 		if index == -1 {
 			return inc.NCE_OFFSET_INDEX_MISSING
 		}
-		offset = cnc._setup.tool_table[index].length
+		offset = cnc._setup.tool_table[index].Length
 		cnc.canon.USE_TOOL_LENGTH_OFFSET(offset)
 		cnc._setup.current.Z =
 			(cnc._setup.current.Z + cnc._setup.tool_length_offset - offset)
@@ -2471,14 +2472,14 @@ func (cnc *rs274ngc_t) convert_control_mode( /* ARGUMENTS                    */
 
 	//static char name[] = "convert_control_mode";
 	if g_code == inc.G_61 {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_EXACT_PATH)
-		cnc._setup.control_mode = CANON_EXACT_PATH
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_EXACT_PATH)
+		cnc._setup.control_mode = inc.CANON_EXACT_PATH
 	} else if g_code == inc.G_61_1 {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_EXACT_STOP)
-		cnc._setup.control_mode = CANON_EXACT_STOP
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_EXACT_STOP)
+		cnc._setup.control_mode = inc.CANON_EXACT_STOP
 	} else if g_code == inc.G_64 {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_CONTINUOUS)
-		cnc._setup.control_mode = CANON_CONTINUOUS
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_CONTINUOUS)
+		cnc._setup.control_mode = inc.CANON_CONTINUOUS
 	} else {
 		return inc.NCE_BUG_CODE_NOT_G61_G61_1_OR_G64
 	}
@@ -3131,7 +3132,7 @@ func (cnc *rs274ngc_t) convert_probe() inc.STATUS {
 		math.Pow((cnc._setup.current.Y-end_y), 2) +
 		math.Pow((cnc._setup.current.Z-end_z), 2))
 
-	if distance < inc.If((cnc._setup.length_units == CANON_UNITS_MM), 0.254, 0.01).(float64) {
+	if distance < inc.If((cnc._setup.length_units == inc.CANON_UNITS_MM), 0.254, 0.01).(float64) {
 		return inc.NCE_START_POINT_TOO_CLOSE_TO_PROBE_POINT
 	}
 

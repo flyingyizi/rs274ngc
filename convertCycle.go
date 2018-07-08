@@ -55,11 +55,11 @@ func (cnc *rs274ngc_t) convert_cycle( /* ARGUMENTS                              
 		cnc._setup.block1.l_number = 1
 	}
 
-	if plane == CANON_PLANE_XY {
+	if plane == inc.CANON_PLANE_XY {
 		cnc.convert_cycle_xy(motion)
-	} else if plane == CANON_PLANE_YZ {
+	} else if plane == inc.CANON_PLANE_YZ {
 		cnc.convert_cycle_yz(motion)
-	} else if plane == CANON_PLANE_XZ {
+	} else if plane == inc.CANON_PLANE_XZ {
 		cnc.convert_cycle_zx(motion)
 	} else {
 		return inc.NCE_BUG_PLANE_NOT_XY_YZ_OR_XZ
@@ -97,17 +97,17 @@ func (cnc *rs274ngc_t) convert_cycle( /* ARGUMENTS                              
 */
 
 func (cnc *rs274ngc_t) cycle_feed( /* ARGUMENTS                  */
-	plane CANON_PLANE, /* currently selected plane   */
+	plane inc.CANON_PLANE, /* currently selected plane   */
 	end1, /* first coordinate value     */
 	end2, /* second coordinate value    */
 	end3 float64) inc.STATUS { /* third coordinate value     */
 
 	//static char name[] = "cycle_feed";
 
-	if plane == CANON_PLANE_XY {
+	if plane == inc.CANON_PLANE_XY {
 		cnc.canon.STRAIGHT_FEED(end1, end2, end3, cnc._setup.current.A, cnc._setup.current.B, cnc._setup.current.C)
 
-	} else if plane == CANON_PLANE_YZ {
+	} else if plane == inc.CANON_PLANE_YZ {
 		cnc.canon.STRAIGHT_FEED(end3, end1, end2, cnc._setup.current.A, cnc._setup.current.B, cnc._setup.current.C)
 
 	} else { /* if (plane IS CANON_PLANE_XZ) */
@@ -142,16 +142,16 @@ func (cnc *rs274ngc_t) cycle_feed( /* ARGUMENTS                  */
 */
 
 func (cnc *rs274ngc_t) cycle_traverse( /* ARGUMENTS                 */
-	plane CANON_PLANE, /* currently selected plane  */
+	plane inc.CANON_PLANE, /* currently selected plane  */
 	end1, /* first coordinate value    */
 	end2, /* second coordinate value   */
 	end3 float64) inc.STATUS { /* third coordinate value    */
 
 	//static char name[] = "cycle_traverse";
-	if plane == CANON_PLANE_XY {
+	if plane == inc.CANON_PLANE_XY {
 		cnc.canon.STRAIGHT_TRAVERSE(end1, end2, end3, cnc._setup.current.A, cnc._setup.current.B, cnc._setup.current.C)
 
-	} else if plane == CANON_PLANE_YZ {
+	} else if plane == inc.CANON_PLANE_YZ {
 		cnc.canon.STRAIGHT_TRAVERSE(end3, end1, end2, cnc._setup.current.A, cnc._setup.current.B, cnc._setup.current.C)
 
 	} else { /* if (plane == CANON_PLANE_XZ) */
@@ -187,7 +187,7 @@ func (cnc *rs274ngc_t) cycle_traverse( /* ARGUMENTS                 */
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g81( /* ARGUMENTS                        */
-	plane CANON_PLANE, /* selected plane                   */
+	plane inc.CANON_PLANE, /* selected plane                   */
 	x, /* x-value where cycle is executed  */
 	y, /* y-value where cycle is executed  */
 	clear_z, /* z-value of clearance plane       */
@@ -227,7 +227,7 @@ func (cnc *rs274ngc_t) convert_cycle_g81( /* ARGUMENTS                        */
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g82( /* ARGUMENTS                        */
-	plane CANON_PLANE, /* selected plane                   */
+	plane inc.CANON_PLANE, /* selected plane                   */
 	x, /* x-value where cycle is executed  */
 	y, /* y-value where cycle is executed  */
 	clear_z, /* z-value of clearance plane       */
@@ -283,7 +283,7 @@ const (
    return, in inches */
 
 func (cnc *rs274ngc_t) convert_cycle_g83( /* ARGUMENTS                        */
-	plane CANON_PLANE, /* selected plane                   */
+	plane inc.CANON_PLANE, /* selected plane                   */
 	x, /* x-value where cycle is executed  */
 	y, /* y-value where cycle is executed  */
 	r, /* initial z-value                  */
@@ -294,7 +294,7 @@ func (cnc *rs274ngc_t) convert_cycle_g83( /* ARGUMENTS                        */
 	//        static char name[] = "convert_cycle_g83";
 
 	rapid_delta := G83_RAPID_DELTA
-	if cnc._setup.length_units == CANON_UNITS_MM {
+	if cnc._setup.length_units == inc.CANON_UNITS_MM {
 		rapid_delta = (rapid_delta * 25.4)
 
 	}
@@ -346,17 +346,17 @@ func (cnc *rs274ngc_t) convert_cycle_g83( /* ARGUMENTS                        */
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g84( /* ARGUMENTS                           */
-	plane CANON_PLANE, /* selected plane                      */
+	plane inc.CANON_PLANE, /* selected plane                      */
 	x, /* x-value where cycle is executed     */
 	y, /* y-value where cycle is executed     */
 	clear_z, /* z-value of clearance plane          */
 	bottom_z float64, /* value of z at bottom of cycle       */
-	direction CANON_DIRECTION, /* direction spindle turning at outset */
+	direction inc.CANON_DIRECTION, /* direction spindle turning at outset */
 	mode inc.CANON_SPEED_FEED_MODE) inc.STATUS { /* the speed-feed mode at outset       */
 
 	//static char name[] = "convert_cycle_g84";
 
-	if direction != CANON_CLOCKWISE {
+	if direction != inc.CANON_CLOCKWISE {
 		return inc.NCE_SPINDLE_NOT_TURNING_CLOCKWISE_IN_G84
 	}
 
@@ -401,7 +401,7 @@ func (cnc *rs274ngc_t) convert_cycle_g84( /* ARGUMENTS                          
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g85( /* ARGUMENTS                        */
-	plane CANON_PLANE, /* selected plane                   */
+	plane inc.CANON_PLANE, /* selected plane                   */
 	x, /* x-value where cycle is executed  */
 	y, /* y-value where cycle is executed  */
 	clear_z, /* z-value of clearance plane       */
@@ -447,18 +447,18 @@ func (cnc *rs274ngc_t) convert_cycle_g85( /* ARGUMENTS                        */
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g86( /* ARGUMENTS                           */
-	plane CANON_PLANE, /* selected plane                      */
+	plane inc.CANON_PLANE, /* selected plane                      */
 	x, /* x-value where cycle is executed     */
 	y, /* y-value where cycle is executed     */
 	clear_z, /* z-value of clearance plane          */
 	bottom_z, /* value of z at bottom of cycle       */
 	dwell float64, /* dwell time                          */
-	direction CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
+	direction inc.CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
 
 	// static char name[] = "convert_cycle_g86";
 
-	if (direction != CANON_CLOCKWISE) &&
-		(direction != CANON_COUNTERCLOCKWISE) {
+	if (direction != inc.CANON_CLOCKWISE) &&
+		(direction != inc.CANON_COUNTERCLOCKWISE) {
 		return inc.NCE_SPINDLE_NOT_TURNING_IN_G86
 	}
 
@@ -466,7 +466,7 @@ func (cnc *rs274ngc_t) convert_cycle_g86( /* ARGUMENTS                          
 	cnc.canon.DWELL(dwell)
 	cnc.canon.STOP_SPINDLE_TURNING()
 	cnc.cycle_traverse(plane, x, y, clear_z)
-	if direction == CANON_CLOCKWISE {
+	if direction == inc.CANON_CLOCKWISE {
 		cnc.canon.START_SPINDLE_CLOCKWISE()
 
 	} else {
@@ -536,7 +536,7 @@ func (cnc *rs274ngc_t) convert_cycle_g86( /* ARGUMENTS                          
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g87( /* ARGUMENTS                           */
-	plane CANON_PLANE, /* selected plane                      */
+	plane inc.CANON_PLANE, /* selected plane                      */
 	x, /* x-value where cycle is executed     */
 	offset_x, /* x-axis offset position              */
 	y, /* y-value where cycle is executed     */
@@ -545,12 +545,12 @@ func (cnc *rs274ngc_t) convert_cycle_g87( /* ARGUMENTS                          
 	clear_z, /* z-value of clearance plane          */
 	middle_z, /* z-value of top of back bore         */
 	bottom_z float64, /* value of z at bottom of cycle       */
-	direction CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
+	direction inc.CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
 
 	//static char name[] = "convert_cycle_g87";
 
-	if (direction != CANON_CLOCKWISE) &&
-		(direction != CANON_COUNTERCLOCKWISE) {
+	if (direction != inc.CANON_CLOCKWISE) &&
+		(direction != inc.CANON_COUNTERCLOCKWISE) {
 		return inc.NCE_SPINDLE_NOT_TURNING_IN_G87
 	}
 
@@ -559,7 +559,7 @@ func (cnc *rs274ngc_t) convert_cycle_g87( /* ARGUMENTS                          
 	cnc.canon.ORIENT_SPINDLE(0.0, direction)
 	cnc.cycle_traverse(plane, offset_x, offset_y, bottom_z)
 	cnc.cycle_traverse(plane, x, y, bottom_z)
-	if direction == CANON_CLOCKWISE {
+	if direction == inc.CANON_CLOCKWISE {
 		cnc.canon.START_SPINDLE_CLOCKWISE()
 
 	} else {
@@ -573,7 +573,7 @@ func (cnc *rs274ngc_t) convert_cycle_g87( /* ARGUMENTS                          
 	cnc.cycle_traverse(plane, offset_x, offset_y, bottom_z)
 	cnc.cycle_traverse(plane, offset_x, offset_y, clear_z)
 	cnc.cycle_traverse(plane, x, y, clear_z)
-	if direction == CANON_CLOCKWISE {
+	if direction == inc.CANON_CLOCKWISE {
 		cnc.canon.START_SPINDLE_CLOCKWISE()
 
 	} else {
@@ -615,17 +615,17 @@ func (cnc *rs274ngc_t) convert_cycle_g87( /* ARGUMENTS                          
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g88( /* ARGUMENTS                           */
-	plane CANON_PLANE, /* selected plane                      */
+	plane inc.CANON_PLANE, /* selected plane                      */
 	x, /* x-value where cycle is executed     */
 	y, /* y-value where cycle is executed     */
 	bottom_z, /* value of z at bottom of cycle       */
 	dwell float64, /* dwell time                          */
-	direction CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
+	direction inc.CANON_DIRECTION) inc.STATUS { /* direction spindle turning at outset */
 
 	//static char name[] = "convert_cycle_g88";
 
-	if (direction != CANON_CLOCKWISE) &&
-		(direction != CANON_COUNTERCLOCKWISE) {
+	if (direction != inc.CANON_CLOCKWISE) &&
+		(direction != inc.CANON_COUNTERCLOCKWISE) {
 		return inc.NCE_SPINDLE_NOT_TURNING_IN_G88
 	}
 
@@ -633,7 +633,7 @@ func (cnc *rs274ngc_t) convert_cycle_g88( /* ARGUMENTS                          
 	cnc.canon.DWELL(dwell)
 	cnc.canon.STOP_SPINDLE_TURNING()
 	cnc.canon.PROGRAM_STOP() /* operator retracts the spindle here */
-	if direction == CANON_CLOCKWISE {
+	if direction == inc.CANON_CLOCKWISE {
 		cnc.canon.START_SPINDLE_CLOCKWISE()
 
 	} else {
@@ -669,7 +669,7 @@ func (cnc *rs274ngc_t) convert_cycle_g88( /* ARGUMENTS                          
 */
 
 func (cnc *rs274ngc_t) convert_cycle_g89( /* ARGUMENTS                        */
-	plane CANON_PLANE, /* selected plane                   */
+	plane inc.CANON_PLANE, /* selected plane                   */
 	x, /* x-value where cycle is executed  */
 	y, /* y-value where cycle is executed  */
 	clear_z, /* z-value of clearance plane       */
@@ -817,9 +817,9 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 		k,
 		old_cc float64
 
-		save_mode CANON_MOTION_MODE
+		save_mode inc.CANON_MOTION_MODE
 	)
-	plane := CANON_PLANE_XY
+	plane := inc.CANON_PLANE_XY
 
 	if cnc._setup.motion_mode != motion {
 		if cnc._setup.block1.z_flag == OFF {
@@ -859,8 +859,8 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 	clear_cc = inc.If(cnc._setup.retract_mode == inc.R_PLANE, r, old_cc).(float64)
 
 	save_mode = cnc.canon.GET_EXTERNAL_MOTION_CONTROL_MODE()
-	if save_mode != CANON_EXACT_PATH {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_EXACT_PATH)
+	if save_mode != inc.CANON_EXACT_PATH {
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_EXACT_PATH)
 	}
 
 	switch motion {
@@ -873,7 +873,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g81(CANON_PLANE_XY, aa, bb, clear_cc, cc)
+			cnc.convert_cycle_g81(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc)
 			old_cc = clear_cc
 		}
 		break
@@ -892,7 +892,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g82(CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
+			cnc.convert_cycle_g82(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
 			old_cc = clear_cc
 		}
 
@@ -914,7 +914,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g83(CANON_PLANE_XY, aa, bb, r, clear_cc, cc, cnc._setup.block1.q_number)
+			cnc.convert_cycle_g83(inc.CANON_PLANE_XY, aa, bb, r, clear_cc, cc, cnc._setup.block1.q_number)
 			old_cc = clear_cc
 		}
 
@@ -929,7 +929,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g84(CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.spindle_turning, cnc._setup.speed_feed_mode)
+			cnc.convert_cycle_g84(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.spindle_turning, cnc._setup.speed_feed_mode)
 			old_cc = clear_cc
 		}
 
@@ -943,7 +943,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g85(CANON_PLANE_XY, aa, bb, clear_cc, cc)
+			cnc.convert_cycle_g85(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc)
 			old_cc = clear_cc
 		}
 
@@ -964,7 +964,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g86(CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
+			cnc.convert_cycle_g86(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
 			old_cc = clear_cc
 		}
 
@@ -1000,7 +1000,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g87(CANON_PLANE_XY, aa, (aa + i), bb, (bb + j), r, clear_cc, k, cc, cnc._setup.spindle_turning)
+			cnc.convert_cycle_g87(inc.CANON_PLANE_XY, aa, (aa + i), bb, (bb + j), r, clear_cc, k, cc, cnc._setup.spindle_turning)
 			old_cc = clear_cc
 		}
 
@@ -1021,7 +1021,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g88(CANON_PLANE_XY, aa, bb, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
+			cnc.convert_cycle_g88(inc.CANON_PLANE_XY, aa, bb, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
 			old_cc = clear_cc
 		}
 
@@ -1043,7 +1043,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g89(CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
+			cnc.convert_cycle_g89(inc.CANON_PLANE_XY, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
 			old_cc = clear_cc
 		}
 
@@ -1057,7 +1057,7 @@ func (cnc *rs274ngc_t) convert_cycle_xy( /* ARGUMENTS                           
 	cnc._setup.current.Z = clear_cc
 	cnc._setup.cycle.cc = cnc._setup.block1.z_number
 
-	if save_mode != CANON_EXACT_PATH {
+	if save_mode != inc.CANON_EXACT_PATH {
 		cnc.canon.SET_MOTION_CONTROL_MODE(save_mode)
 
 	}
@@ -1131,10 +1131,10 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 		old_cc,
 		r float64
 		//repeat    int
-		save_mode CANON_MOTION_MODE
+		save_mode inc.CANON_MOTION_MODE
 	)
 
-	plane := CANON_PLANE_YZ
+	plane := inc.CANON_PLANE_YZ
 
 	if cnc._setup.motion_mode != motion {
 		if cnc._setup.block1.x_flag == OFF {
@@ -1175,8 +1175,8 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 	clear_cc = inc.If(cnc._setup.retract_mode == inc.R_PLANE, r, old_cc).(float64)
 
 	save_mode = cnc.canon.GET_EXTERNAL_MOTION_CONTROL_MODE()
-	if save_mode != CANON_EXACT_PATH {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_EXACT_PATH)
+	if save_mode != inc.CANON_EXACT_PATH {
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_EXACT_PATH)
 	}
 
 	switch motion {
@@ -1189,7 +1189,7 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g81(CANON_PLANE_YZ, aa, bb, clear_cc, cc)
+			cnc.convert_cycle_g81(inc.CANON_PLANE_YZ, aa, bb, clear_cc, cc)
 			old_cc = clear_cc
 		}
 
@@ -1229,7 +1229,7 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g87(CANON_PLANE_YZ, aa, (aa + j), bb, (bb + k), r, clear_cc, i, cc, cnc._setup.spindle_turning)
+			cnc.convert_cycle_g87(inc.CANON_PLANE_YZ, aa, (aa + j), bb, (bb + k), r, clear_cc, i, cc, cnc._setup.spindle_turning)
 			old_cc = clear_cc
 		}
 
@@ -1249,7 +1249,7 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g88(CANON_PLANE_YZ, aa, bb, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
+			cnc.convert_cycle_g88(inc.CANON_PLANE_YZ, aa, bb, cc, cnc._setup.block1.p_number, cnc._setup.spindle_turning)
 			old_cc = clear_cc
 		}
 
@@ -1271,7 +1271,7 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			cnc.convert_cycle_g89(CANON_PLANE_YZ, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
+			cnc.convert_cycle_g89(inc.CANON_PLANE_YZ, aa, bb, clear_cc, cc, cnc._setup.block1.p_number)
 			old_cc = clear_cc
 		}
 
@@ -1285,7 +1285,7 @@ func (cnc *rs274ngc_t) convert_cycle_yz( /* ARGUMENTS                           
 	cnc._setup.current.X = clear_cc
 	cnc._setup.cycle.cc = cnc._setup.block1.x_number
 
-	if save_mode != CANON_EXACT_PATH {
+	if save_mode != inc.CANON_EXACT_PATH {
 		cnc.canon.SET_MOTION_CONTROL_MODE(save_mode)
 	}
 	return inc.RS274NGC_OK
@@ -1363,14 +1363,14 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 		j,
 		k,
 		old_cc float64
-		plane CANON_PLANE
+		plane inc.CANON_PLANE
 		r     float64
 		//repeat    int
-		save_mode CANON_MOTION_MODE
+		save_mode inc.CANON_MOTION_MODE
 	)
 
 	//
-	plane = CANON_PLANE_XZ
+	plane = inc.CANON_PLANE_XZ
 	if cnc._setup.motion_mode != motion {
 		if cnc._setup.block1.y_flag == OFF {
 			return inc.NCE_Y_VALUE_UNSPECIFIED_IN_XZ_PLANE_CANNED_CYCLE
@@ -1411,8 +1411,8 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 	clear_cc = inc.If(cnc._setup.retract_mode == inc.R_PLANE, r, old_cc).(float64)
 
 	save_mode = cnc.canon.GET_EXTERNAL_MOTION_CONTROL_MODE()
-	if save_mode != CANON_EXACT_PATH {
-		cnc.canon.SET_MOTION_CONTROL_MODE(CANON_EXACT_PATH)
+	if save_mode != inc.CANON_EXACT_PATH {
+		cnc.canon.SET_MOTION_CONTROL_MODE(inc.CANON_EXACT_PATH)
 
 	}
 
@@ -1426,7 +1426,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g81(CANON_PLANE_XZ, aa, bb, clear_cc, cc))
+			(cnc.convert_cycle_g81(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc))
 			old_cc = clear_cc
 		}
 
@@ -1447,7 +1447,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g82(CANON_PLANE_XZ, aa, bb, clear_cc, cc, cnc._setup.block1.p_number))
+			(cnc.convert_cycle_g82(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc, cnc._setup.block1.p_number))
 			old_cc = clear_cc
 		}
 
@@ -1469,7 +1469,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g83(CANON_PLANE_XZ, aa, bb, r, clear_cc, cc, cnc._setup.block1.q_number))
+			(cnc.convert_cycle_g83(inc.CANON_PLANE_XZ, aa, bb, r, clear_cc, cc, cnc._setup.block1.q_number))
 			old_cc = clear_cc
 		}
 
@@ -1484,7 +1484,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g84(CANON_PLANE_XZ, aa, bb, clear_cc, cc,
+			(cnc.convert_cycle_g84(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc,
 				cnc._setup.spindle_turning, cnc._setup.speed_feed_mode))
 			old_cc = clear_cc
 		}
@@ -1499,7 +1499,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g85(CANON_PLANE_XZ, aa, bb, clear_cc, cc))
+			(cnc.convert_cycle_g85(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc))
 			old_cc = clear_cc
 		}
 
@@ -1520,7 +1520,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g86(CANON_PLANE_XZ, aa, bb, clear_cc, cc,
+			(cnc.convert_cycle_g86(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc,
 				cnc._setup.block1.p_number, cnc._setup.spindle_turning))
 			old_cc = clear_cc
 		}
@@ -1556,7 +1556,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g87(CANON_PLANE_XZ, aa, (aa + k), bb,
+			(cnc.convert_cycle_g87(inc.CANON_PLANE_XZ, aa, (aa + k), bb,
 				(bb + i), r, clear_cc, j, cc, cnc._setup.spindle_turning))
 			old_cc = clear_cc
 		}
@@ -1578,7 +1578,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g88(CANON_PLANE_XZ, aa, bb, cc,
+			(cnc.convert_cycle_g88(inc.CANON_PLANE_XZ, aa, bb, cc,
 				cnc._setup.block1.p_number, cnc._setup.spindle_turning))
 			old_cc = clear_cc
 		}
@@ -1601,7 +1601,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 				cnc.cycle_traverse(plane, aa, bb, r)
 			}
 			//CHP(call);
-			(cnc.convert_cycle_g89(CANON_PLANE_XZ, aa, bb, clear_cc, cc,
+			(cnc.convert_cycle_g89(inc.CANON_PLANE_XZ, aa, bb, clear_cc, cc,
 				cnc._setup.block1.p_number))
 			old_cc = clear_cc
 		}
@@ -1616,7 +1616,7 @@ func (cnc *rs274ngc_t) convert_cycle_zx( /* ARGUMENTS                           
 	cnc._setup.current.Y = clear_cc
 	cnc._setup.cycle.cc = cnc._setup.block1.y_number
 
-	if save_mode != CANON_EXACT_PATH {
+	if save_mode != inc.CANON_EXACT_PATH {
 		cnc.canon.SET_MOTION_CONTROL_MODE(save_mode)
 	}
 

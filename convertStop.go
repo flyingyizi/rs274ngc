@@ -140,9 +140,9 @@ func (cnc *rs274ngc_t) convert_stop() inc.STATUS {
 			cnc._setup.origin_offset.C)
 
 		/*2*/
-		if cnc._setup.plane != CANON_PLANE_XY {
-			cnc.canon.SELECT_PLANE(CANON_PLANE_XY)
-			cnc._setup.plane = CANON_PLANE_XY
+		if cnc._setup.plane != inc.CANON_PLANE_XY {
+			cnc.canon.SELECT_PLANE(inc.CANON_PLANE_XY)
+			cnc._setup.plane = inc.CANON_PLANE_XY
 		}
 
 		/*3*/
@@ -167,7 +167,7 @@ func (cnc *rs274ngc_t) convert_stop() inc.STATUS {
 
 		/*7*/
 		cnc.canon.STOP_SPINDLE_TURNING()
-		cnc._setup.spindle_turning = CANON_STOPPED
+		cnc._setup.spindle_turning = inc.CANON_STOPPED
 
 		/*8*/
 		cnc._setup.motion_mode = inc.G_1

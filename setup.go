@@ -24,7 +24,7 @@ type Setup_t struct {
 	active_settings    [inc.RS274NGC_ACTIVE_SETTINGS]float64   // array of feed, speed, etc.
 	block1             Block_t                                 // parsed next block
 	blocktext          string                                  // linetext downcased, white space gone
-	control_mode       CANON_MOTION_MODE                       // exact path or cutting mode
+	control_mode       inc.CANON_MOTION_MODE                   // exact path or cutting mode
 	current_slot       int                                     // carousel slot number of current tool
 	cutter_comp_radius float64                                 // current cutter compensation radius
 	cutter_comp_side   inc.CANON_SIDE                          // current cutter compensation side
@@ -51,16 +51,16 @@ type Setup_t struct {
 		flood ON_OFF // whether flood coolant is on
 		mist  ON_OFF // whether mist coolant is on
 	}
-	length_offset_index int         // for use with tool length offsets
-	length_units        CANON_UNITS // millimeters or inches
-	line_length         uint        // length of line last read
-	linetext            string      // text of most recent line read
-	motion_mode         inc.GCodes  // active G-code for motion
-	origin_index        int         // active origin (1=G54 to 9=G59.3)
-	parameters          []float64   // system parameters
-	percent_flag        ON_OFF      // ON means first line was percent sign
+	length_offset_index int             // for use with tool length offsets
+	length_units        inc.CANON_UNITS // millimeters or inches
+	line_length         uint            // length of line last read
+	linetext            string          // text of most recent line read
+	motion_mode         inc.GCodes      // active G-code for motion
+	origin_index        int             // active origin (1=G54 to 9=G59.3)
+	parameters          []float64       // system parameters
+	percent_flag        ON_OFF          // ON means first line was percent sign
 
-	plane              CANON_PLANE      // active plane, XY-, YZ-, or XZ-plane
+	plane              inc.CANON_PLANE  // active plane, XY-, YZ-, or XZ-plane
 	probe_flag         ON_OFF           // flag indicating probing done
 	program_x          float64          // program x, used when cutter comp on
 	program_y          float64          // program y, used when cutter comp on
@@ -69,14 +69,14 @@ type Setup_t struct {
 	sequence_number    int              // sequence number of line last read
 	speed              float64          // current spindle speed in rpm
 	spindle_mode       inc.SpindleMode
-	speed_feed_mode    inc.CANON_SPEED_FEED_MODE                // independent or synched
-	speed_override     ON_OFF                                   // whether speed override is enabled
-	spindle_turning    CANON_DIRECTION                          // direction spindle is turning
-	tool_length_offset float64                                  // current tool length offset
-	tool_max           uint                                     // highest number tool slot in carousel
-	tool_table         [inc.CANON_TOOL_MAX + 1]CANON_TOOL_TABLE // index is slot number
-	tool_table_index   int                                      // tool index used with cutter comp
-	traverse_rate      float64                                  // rate for traverse motions
+	speed_feed_mode    inc.CANON_SPEED_FEED_MODE                    // independent or synched
+	speed_override     ON_OFF                                       // whether speed override is enabled
+	spindle_turning    inc.CANON_DIRECTION                          // direction spindle is turning
+	tool_length_offset float64                                      // current tool length offset
+	tool_max           uint                                         // highest number tool slot in carousel
+	tool_table         [inc.CANON_TOOL_MAX + 1]inc.CANON_TOOL_TABLE // index is slot number
+	tool_table_index   int                                          // tool index used with cutter comp
+	traverse_rate      float64                                      // rate for traverse motions
 
 }
 
@@ -131,13 +131,13 @@ func (settings *Setup_t) Write_g_codes(block *Block_t) int { /* pointer to a blo
 	gez[1] = settings.motion_mode
 	gez[2] = block.g_modes[GCodeMisc]
 	gez[3] =
-		inc.If(settings.plane == CANON_PLANE_XY, inc.G_17,
-			inc.If(settings.plane == CANON_PLANE_XZ, inc.G_18, inc.G_19).(inc.GCodes)).(inc.GCodes)
+		inc.If(settings.plane == inc.CANON_PLANE_XY, inc.G_17,
+			inc.If(settings.plane == inc.CANON_PLANE_XZ, inc.G_18, inc.G_19).(inc.GCodes)).(inc.GCodes)
 	gez[4] =
 		inc.If(settings.cutter_comp_side == inc.CANON_SIDE_RIGHT, inc.G_42,
 			inc.If(settings.cutter_comp_side == inc.CANON_SIDE_LEFT, inc.G_41, inc.G_40).(inc.GCodes)).(inc.GCodes)
 	gez[5] =
-		inc.If(settings.length_units == CANON_UNITS_INCHES, inc.G_20, inc.G_21).(inc.GCodes)
+		inc.If(settings.length_units == inc.CANON_UNITS_INCHES, inc.G_20, inc.G_21).(inc.GCodes)
 	gez[6] =
 		inc.If(settings.distance_mode == inc.MODE_ABSOLUTE, inc.G_90, inc.G_91).(inc.GCodes)
 	gez[7] =
@@ -150,8 +150,8 @@ func (settings *Setup_t) Write_g_codes(block *Block_t) int { /* pointer to a blo
 	gez[10] =
 		inc.If(settings.retract_mode == inc.OLD_Z, inc.G_98, inc.G_99).(inc.GCodes)
 	gez[11] =
-		inc.If(settings.control_mode == CANON_CONTINUOUS, inc.G_64,
-			inc.If(settings.control_mode == CANON_EXACT_PATH, inc.G_61, inc.G_61_1).(inc.GCodes)).(inc.GCodes)
+		inc.If(settings.control_mode == inc.CANON_CONTINUOUS, inc.G_64,
+			inc.If(settings.control_mode == inc.CANON_EXACT_PATH, inc.G_61, inc.G_61_1).(inc.GCodes)).(inc.GCodes)
 
 	return inc.RS274NGC_OK
 }
@@ -177,8 +177,8 @@ func (settings *Setup_t) Write_m_codes(block *Block_t) int { /* pointer to a blo
 	emz := settings.active_m_codes
 	emz[0] = settings.sequence_number                         /* 0 seq number  */
 	emz[1] = inc.If(block == nil, -1, block.m_modes[4]).(int) /* 1 stopping    */
-	emz[2] = inc.If(settings.spindle_turning == CANON_STOPPED, 5,
-		inc.If(settings.spindle_turning == CANON_CLOCKWISE, 3, 4).(int)).(int) /* 2 spindle     */
+	emz[2] = inc.If(settings.spindle_turning == inc.CANON_STOPPED, 5,
+		inc.If(settings.spindle_turning == inc.CANON_CLOCKWISE, 3, 4).(int)).(int) /* 2 spindle     */
 	emz[3] = inc.If(block == nil, -1, block.m_modes[6]).(int) /* 3 tool change */
 	emz[4] = inc.If(settings.coolant.mist == ON, 7,
 		inc.If(settings.coolant.flood == ON, -1, 9).(int)).(int) /* 4 mist        */

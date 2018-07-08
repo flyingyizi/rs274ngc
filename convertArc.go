@@ -97,7 +97,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 		}
 	}
 	if ijk_flag {
-		if cnc._setup.plane == CANON_PLANE_XY {
+		if cnc._setup.plane == inc.CANON_PLANE_XY {
 			if cnc._setup.block1.k_flag {
 				return inc.NCE_K_WORD_GIVEN_FOR_ARC_IN_XY_PLANE
 			}
@@ -106,7 +106,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 			} else if cnc._setup.block1.j_flag == OFF {
 				cnc._setup.block1.j_number = 0.0
 			}
-		} else if cnc._setup.plane == CANON_PLANE_YZ {
+		} else if cnc._setup.plane == inc.CANON_PLANE_YZ {
 			if cnc._setup.block1.i_flag {
 				return inc.NCE_I_WORD_GIVEN_FOR_ARC_IN_YZ_PLANE
 			}
@@ -116,7 +116,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 				cnc._setup.block1.k_number = 0.0
 
 			}
-		} else if cnc._setup.plane == CANON_PLANE_XZ {
+		} else if cnc._setup.plane == inc.CANON_PLANE_XZ {
 			if cnc._setup.block1.j_flag {
 				return inc.NCE_J_WORD_GIVEN_FOR_ARC_IN_XZ_PLANE
 			}
@@ -132,17 +132,17 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 
 	} /* r format arc; no other checks needed specific to this format */
 
-	if cnc._setup.plane == CANON_PLANE_XY { /* checks for both formats */
+	if cnc._setup.plane == inc.CANON_PLANE_XY { /* checks for both formats */
 		if (cnc._setup.block1.x_flag == OFF) && (cnc._setup.block1.y_flag == OFF) {
 			return inc.NCE_X_AND_Y_WORDS_MISSING_FOR_ARC_IN_XY_PLANE
 		}
 
-	} else if cnc._setup.plane == CANON_PLANE_YZ {
+	} else if cnc._setup.plane == inc.CANON_PLANE_YZ {
 		if (cnc._setup.block1.y_flag == OFF) && (cnc._setup.block1.z_flag == OFF) {
 			return inc.NCE_Y_AND_Z_WORDS_MISSING_FOR_ARC_IN_YZ_PLANE
 		}
 
-	} else if cnc._setup.plane == CANON_PLANE_XZ {
+	} else if cnc._setup.plane == inc.CANON_PLANE_XZ {
 		if (cnc._setup.block1.x_flag == OFF) && (cnc._setup.block1.z_flag == OFF) {
 			return inc.NCE_X_AND_Z_WORDS_MISSING_FOR_ARC_IN_XZ_PLANE
 		}
@@ -151,7 +151,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 	cnc.find_ends(&end_x, &end_y, &end_z, &AA_end, &BB_end, &CC_end)
 	cnc._setup.motion_mode = move
 
-	if cnc._setup.plane == CANON_PLANE_XY {
+	if cnc._setup.plane == inc.CANON_PLANE_XY {
 		if (cnc._setup.cutter_comp_side == inc.CANON_SIDE_OFF) ||
 			(cnc._setup.cutter_comp_radius == 0.0) {
 			status =
@@ -184,7 +184,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 			}
 
 		}
-	} else if cnc._setup.plane == CANON_PLANE_XZ {
+	} else if cnc._setup.plane == inc.CANON_PLANE_XZ {
 		status =
 			cnc.convert_arc2(move,
 				&(cnc._setup.current.Z), &(cnc._setup.current.X),
@@ -196,7 +196,7 @@ func (cnc *rs274ngc_t) convert_arc( /* ARGUMENTS                                
 			return status
 		}
 
-	} else if cnc._setup.plane == CANON_PLANE_YZ {
+	} else if cnc._setup.plane == inc.CANON_PLANE_YZ {
 		status =
 			cnc.convert_arc2(move,
 				&(cnc._setup.current.Y), &(cnc._setup.current.Z),
@@ -262,7 +262,7 @@ func (cnc *rs274ngc_t) convert_arc_comp1( /* ARGUMENTS                          
 	/* always is positive */
 	tool_radius := cnc._setup.cutter_comp_radius
 	/* tolerance for difference of radii        */
-	tolerance := inc.If(cnc._setup.length_units == CANON_UNITS_INCHES, inc.TOLERANCE_INCH, inc.TOLERANCE_MM).(float64)
+	tolerance := inc.If(cnc._setup.length_units == inc.CANON_UNITS_INCHES, inc.TOLERANCE_INCH, inc.TOLERANCE_MM).(float64)
 
 	if math.Hypot((end_x-cnc._setup.current.X),
 		(end_y-cnc._setup.current.Y)) <= tool_radius {
@@ -379,7 +379,7 @@ func (cnc *rs274ngc_t) convert_arc_comp2( /* ARGUMENTS                          
 	start_x := cnc._setup.program_x
 	start_y := cnc._setup.program_y
 
-	tolerance := inc.If(cnc._setup.length_units == CANON_UNITS_INCHES,
+	tolerance := inc.If(cnc._setup.length_units == inc.CANON_UNITS_INCHES,
 		inc.TOLERANCE_INCH, inc.TOLERANCE_MM).(float64)
 
 	if cnc._setup.block1.r_flag {
@@ -510,7 +510,7 @@ func (cnc *rs274ngc_t) convert_arc2( /* ARGUMENTS                               
 	var center1, center2 float64
 
 	/* tolerance for difference of radii          */
-	tolerance := inc.If(cnc._setup.length_units == CANON_UNITS_INCHES,
+	tolerance := inc.If(cnc._setup.length_units == inc.CANON_UNITS_INCHES,
 		inc.TOLERANCE_INCH, inc.TOLERANCE_MM).(float64)
 
 	if cnc._setup.block1.r_flag {
