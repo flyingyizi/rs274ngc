@@ -236,7 +236,7 @@ type CANON_TOOL_TABLE struct {
 type Canon_i interface {
 	//******Miscellaneous Functions
 
-	COMMENT(s []byte)
+	COMMENT(s string)
 	DISABLE_FEED_OVERRIDE()
 	DISABLE_SPEED_OVERRIDE()
 	ENABLE_FEED_OVERRIDE()
@@ -336,7 +336,7 @@ type Canon_i interface {
 
 	//Return nothing but copy the name of the parameter file into the filename array, stopping at
 	//max_size if the name is longer. An empty string may be placed in filename.
-	GET_EXTERNAL_PARAMETER_FILE_NAME(filename []byte, max_size int)
+	GET_EXTERNAL_PARAMETER_FILE_NAME() string
 
 	//Return the currently active plane.
 	GET_EXTERNAL_PLANE() CANON_PLANE
@@ -366,7 +366,7 @@ type Canon_i interface {
 	GET_EXTERNAL_SPINDLE() CANON_DIRECTION
 
 	//Return the current tool length offset.
-	GET_EXTERNAL_TOOL_LENGTH_OFFSET() float64
+	///TODO GET_EXTERNAL_TOOL_LENGTH_OFFSET() float64
 	//returns number of slots in carousel.
 	GET_EXTERNAL_TOOL_MAX() int
 	//Returns the system value for the carousel slot in which the tool currently in the spindle

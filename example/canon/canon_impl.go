@@ -1,6 +1,9 @@
 package canon
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/flyingyizi/rs274ngc/inc"
 )
 
@@ -47,4 +50,12 @@ var (
 )
 
 type Canon_t struct {
+}
+
+var _ inc.Canon_i = &Canon_t{}
+
+// Fprintf formats according to a format specifier and writes to w.
+// It returns the number of bytes written and any write error encountered.
+func myFprintf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(os.Stdout, format, a)
 }

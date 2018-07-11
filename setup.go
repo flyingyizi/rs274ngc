@@ -129,7 +129,12 @@ func (settings *Setup_t) Write_g_codes(block *Block_t) int { /* pointer to a blo
 
 	///todo gez[0] = settings.sequence_number
 	gez[1] = settings.motion_mode
-	gez[2] = block.g_modes[GCodeMisc]
+	if block == nil {
+		gez[2] = -1
+	} else {
+		gez[2] = block.g_modes[GCodeMisc]
+	}
+
 	gez[3] =
 		inc.If(settings.plane == inc.CANON_PLANE_XY, inc.G_17,
 			inc.If(settings.plane == inc.CANON_PLANE_XZ, inc.G_18, inc.G_19).(inc.GCodes)).(inc.GCodes)
@@ -175,11 +180,25 @@ func (settings *Setup_t) Write_g_codes(block *Block_t) int { /* pointer to a blo
 */
 func (settings *Setup_t) Write_m_codes(block *Block_t) int { /* pointer to a block of RS274/NGC instructions */
 	emz := settings.active_m_codes
-	emz[0] = settings.sequence_number                         /* 0 seq number  */
-	emz[1] = inc.If(block == nil, -1, block.m_modes[4]).(int) /* 1 stopping    */
+	emz[0] = settings.sequence_number /* 0 seq number  */
+
+	/* 1 stopping    */
+	if block == nil {
+		emz[1] = -1
+	} else {
+		emz[1] = block.m_modes[4]
+	}
+
 	emz[2] = inc.If(settings.spindle_turning == inc.CANON_STOPPED, 5,
 		inc.If(settings.spindle_turning == inc.CANON_CLOCKWISE, 3, 4).(int)).(int) /* 2 spindle     */
-	emz[3] = inc.If(block == nil, -1, block.m_modes[6]).(int) /* 3 tool change */
+
+	/* 3 tool change */
+	if block == nil {
+		emz[3] = -1
+	} else {
+		emz[3] = block.m_modes[6]
+	}
+
 	emz[4] = inc.If(settings.coolant.mist == ON, 7,
 		inc.If(settings.coolant.flood == ON, -1, 9).(int)).(int) /* 4 mist        */
 	emz[5] = inc.If(settings.coolant.flood == ON, 8, -1).(int)  /* 5 flood       */

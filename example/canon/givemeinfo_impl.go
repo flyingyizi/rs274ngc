@@ -14,12 +14,12 @@ import "github.com/flyingyizi/rs274ngc/inc"
 */
 
 /* The interpreter is not using this function
+
    // Returns the system angular unit factor, in units / degree
-   extern double GET_EXTERNAL_ANGLE_UNIT_FACTOR()
-   {
-   return 1;
-   }
 */
+func (c Canon_t) GET_EXTERNAL_ANGLE_UNIT_FACTOR() float64 {
+	return 1.0
+}
 
 /* Returns the system feed rate */
 func (c Canon_t) GET_EXTERNAL_FEED_RATE() float64 {
@@ -97,8 +97,7 @@ return _program_origin_z;
 
 */
 
-func (c Canon_t) GET_EXTERNAL_PARAMETER_FILE_NAME(
-	max_size int) string { /* maximum number of characters to copy */
+func (c Canon_t) GET_EXTERNAL_PARAMETER_FILE_NAME() string {
 	return _parameter_file_name
 }
 

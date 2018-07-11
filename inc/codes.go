@@ -49,7 +49,7 @@ package inc
  */
 
 // G Codes are symbolic to be dialect-independent in source code
-type GCodes int
+type GCodes = int
 
 const (
 	_      GCodes = iota

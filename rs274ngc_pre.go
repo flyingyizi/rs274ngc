@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"regexp"
@@ -100,6 +99,7 @@ const (
 /****************************************************************************/
 
 type Rs274ngc_i interface {
+	SetCanon(c inc.Canon_i)
 	// open NC-program file
 	Open(filename string) inc.STATUS
 	// read the command
@@ -137,13 +137,18 @@ type Rs274ngc_i interface {
 	// but stop at max_size if the text is longer
 	LineText() string
 }
+type Rs274ngc_t = rs274ngc_t
 
-var TEST Rs274ngc_i = &rs274ngc_t{}
+var _ Rs274ngc_i = &rs274ngc_t{}
 
 type rs274ngc_t struct {
 	_setup Setup_t
 
 	canon inc.Canon_i
+}
+
+func (cnc *rs274ngc_t) SetCanon(c inc.Canon_i) {
+	cnc.canon = c
 }
 
 /***********************************************************************/
@@ -773,22 +778,20 @@ func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 	//int status;
 	//char filename[RS274NGC_TEXT_SIZE];
 	var (
-		//name string = "rs274ngc_init"
-		//pars     *float64
-		filename []byte
+	//name string = "rs274ngc_init"
+	//pars     *float64
 	) // short name for _setup.parameters
+	cnc._setup.parameters = make([]float64, inc.RS274NGC_MAX_PARAMETERS)
 
 	cnc.canon.INIT_CANON()
 	cnc._setup.length_units = cnc.canon.GET_EXTERNAL_LENGTH_UNIT_TYPE()
 	cnc.canon.USE_LENGTH_UNITS(cnc._setup.length_units)
-	cnc.canon.GET_EXTERNAL_PARAMETER_FILE_NAME(filename, inc.RS274NGC_TEXT_SIZE)
-	if len(filename) == 0 {
+	filename := cnc.canon.GET_EXTERNAL_PARAMETER_FILE_NAME()
+	if len(filename) != 0 {
 		cnc.restore_parameters(string(filename[:]))
 	} else {
 		cnc.restore_parameters(RS274NGC_PARAMETER_FILE_NAME_DEFAULT)
 	}
-
-	cnc._setup.parameters = make([]float64, inc.RS274NGC_MAX_PARAMETERS)
 
 	pars := (cnc._setup.parameters)
 	cnc._setup.origin_index = (int)(pars[5220] + 0.0001)
@@ -797,9 +800,11 @@ func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 	}
 
 	k := (5200 + (cnc._setup.origin_index * 20))
-	cnc.canon.SET_ORIGIN_OFFSETS((pars[k+1] + pars[5211]),
-		(pars[k+2] + pars[5212]),
-		(pars[k+3] + pars[5213]), (pars[k+4] + pars[5214]), //AA
+	cnc.canon.SET_ORIGIN_OFFSETS(
+		(pars[k+1] + pars[5211]), /*x*/
+		(pars[k+2] + pars[5212]), /*y*/
+		(pars[k+3] + pars[5213]), /*z*/
+		(pars[k+4] + pars[5214]), //AA
 		(pars[k+5] + pars[5215]), //BB
 		(pars[k+6] + pars[5216])) //CC
 
@@ -996,12 +1001,6 @@ func (cnc *rs274ngc_t) restore_parameters( /* ARGUMENTS                        *
 	}
 	defer infile.Close()
 
-	if contents, err := ioutil.ReadAll(infile); err == nil {
-		result := strings.Replace(string(contents), "\n", "", 1)
-		fmt.Println("Use os.Open family functions and ioutil.ReadAll to read a file contents:", result)
-	}
-
-	pars := cnc._setup.parameters
 	k = 0
 	index := 0
 	required := _required_parameters[index]
@@ -1015,7 +1014,7 @@ func (cnc *rs274ngc_t) restore_parameters( /* ARGUMENTS                        *
 			break
 		}
 
-		if n, err := fmt.Sscanf(string(line[:]), "%d %lf", &variable, &value); err != nil && n == 2 {
+		if n, _ := fmt.Sscanf(string(line[:]), "%d %f", &variable, &value); n == 2 {
 			if (variable <= 0) || variable >= inc.RS274NGC_MAX_PARAMETERS {
 				return inc.NCE_PARAMETER_NUMBER_OUT_OF_RANGE
 			}
@@ -1024,7 +1023,7 @@ func (cnc *rs274ngc_t) restore_parameters( /* ARGUMENTS                        *
 				if int(k) > variable {
 					return inc.NCE_PARAMETER_FILE_OUT_OF_ORDER
 				} else if int(k) == variable {
-					pars[k] = value
+					cnc._setup.parameters[k] = value
 					if k == required {
 						required = _required_parameters[index]
 						index++
@@ -1036,7 +1035,7 @@ func (cnc *rs274ngc_t) restore_parameters( /* ARGUMENTS                        *
 					if k == required {
 						return inc.NCE_REQUIRED_PARAMETER_MISSING
 					} else {
-						pars[k] = 0
+						cnc._setup.parameters[k] = 0
 					}
 
 				}
@@ -1048,7 +1047,7 @@ func (cnc *rs274ngc_t) restore_parameters( /* ARGUMENTS                        *
 		return inc.NCE_REQUIRED_PARAMETER_MISSING
 	}
 	for ; k < inc.RS274NGC_MAX_PARAMETERS; k++ {
-		pars[k] = 0
+		cnc._setup.parameters[k] = 0
 	}
 
 	return inc.RS274NGC_OK
@@ -1141,7 +1140,7 @@ func (cnc *rs274ngc_t) save_parameters( /* ARGUMENTS             */
 			break
 		}
 		// try for a variable-value match
-		if n, err := fmt.Sscanf(string(line[:]), "%d %lf", &variable, &value); err != nil && n == 2 {
+		if n, _ := fmt.Sscanf(string(line[:]), "%d %f", &variable, &value); n == 2 {
 			if (variable <= 0) || variable >= inc.RS274NGC_MAX_PARAMETERS {
 				return inc.NCE_PARAMETER_NUMBER_OUT_OF_RANGE
 			}
@@ -1205,9 +1204,7 @@ func (cnc *rs274ngc_t) save_parameters( /* ARGUMENTS             */
 
 func (cnc *rs274ngc_t) exit() { /* NO ARGUMENTS */
 
-	var file_name = make([]byte, inc.RS274NGC_TEXT_SIZE)
-
-	cnc.canon.GET_EXTERNAL_PARAMETER_FILE_NAME(file_name, (inc.RS274NGC_TEXT_SIZE - 1))
+	file_name := cnc.canon.GET_EXTERNAL_PARAMETER_FILE_NAME()
 	if len(file_name) == 0 {
 		cnc.save_parameters(RS274NGC_PARAMETER_FILE_NAME_DEFAULT, cnc._setup.parameters)
 	} else {
@@ -1495,7 +1492,7 @@ func (cnc *rs274ngc_t) convert_comment(comment string /* string with comment */)
 	item := str[0]
 
 	if (item != 'M') && (item != 'm') {
-		cnc.canon.COMMENT(str)
+		cnc.canon.COMMENT(comment)
 		return inc.RS274NGC_OK
 	} else {
 		str = str[1:]
@@ -1504,7 +1501,7 @@ func (cnc *rs274ngc_t) convert_comment(comment string /* string with comment */)
 	str = bytes.TrimSpace(str)
 	item = str[0]
 	if (item != 'S') && (item != 's') {
-		cnc.canon.COMMENT(str)
+		cnc.canon.COMMENT(comment)
 		return inc.RS274NGC_OK
 	} else {
 		str = str[1:]
@@ -1512,7 +1509,7 @@ func (cnc *rs274ngc_t) convert_comment(comment string /* string with comment */)
 	str = bytes.TrimSpace(str)
 	item = str[0]
 	if (item != 'G') && (item != 'g') {
-		cnc.canon.COMMENT(str)
+		cnc.canon.COMMENT(comment)
 		return inc.RS274NGC_OK
 	} else {
 		str = str[1:]
@@ -1520,7 +1517,7 @@ func (cnc *rs274ngc_t) convert_comment(comment string /* string with comment */)
 	str = bytes.TrimSpace(str)
 	item = str[0]
 	if item != ',' {
-		cnc.canon.COMMENT(str)
+		cnc.canon.COMMENT(comment)
 		return inc.RS274NGC_OK
 	} else {
 		cnc.canon.MESSAGE(str[1:])
@@ -1557,12 +1554,12 @@ func (cnc *rs274ngc_t) convert_feed_mode( /* ARGUMENTS                          
 	//static char name[] = "convert_feed_mode";
 	if g_code == inc.G_93 {
 
-		cnc.canon.COMMENT([]byte("interpreter: feed mode set to inverse time"))
+		cnc.canon.COMMENT(("interpreter: feed mode set to inverse time"))
 
 		cnc._setup.feed_mode = inc.INVERSE_TIME
 	} else if g_code == inc.G_94 {
 
-		cnc.canon.COMMENT([]byte("interpreter: feed mode set to units per minute"))
+		cnc.canon.COMMENT(("interpreter: feed mode set to units per minute"))
 
 		cnc._setup.feed_mode = inc.UNITS_PER_MINUTE
 	} else {
@@ -2133,7 +2130,7 @@ func (cnc *rs274ngc_t) convert_cutter_compensation( /* ARGUMENTS                
 */
 func (cnc *rs274ngc_t) convert_cutter_compensation_off() inc.STATUS {
 
-	cnc.canon.COMMENT([]byte("interpreter: cutter radius compensation off"))
+	cnc.canon.COMMENT(("interpreter: cutter radius compensation off"))
 	cnc._setup.cutter_comp_side = inc.CANON_SIDE_OFF
 	cnc._setup.program_x = inc.UNKNOWN
 	return inc.RS274NGC_OK
@@ -2217,10 +2214,10 @@ func (cnc *rs274ngc_t) convert_cutter_compensation_on( /* ARGUMENTS             
 	}
 
 	if side == inc.CANON_SIDE_RIGHT {
-		cnc.canon.COMMENT([]byte("interpreter: cutter radius compensation on right"))
+		cnc.canon.COMMENT(("interpreter: cutter radius compensation on right"))
 
 	} else {
-		cnc.canon.COMMENT([]byte("interpreter: cutter radius compensation on left"))
+		cnc.canon.COMMENT(("interpreter: cutter radius compensation on left"))
 
 	}
 
@@ -2393,7 +2390,7 @@ func (cnc *rs274ngc_t) convert_coordinate_system( /* ARGUMENTS                  
 	}
 
 	if origin == cnc._setup.origin_index { /* already using this origin */
-		cnc.canon.COMMENT([]byte("interpreter: continuing to use same coordinate system"))
+		cnc.canon.COMMENT(("interpreter: continuing to use same coordinate system"))
 		return inc.RS274NGC_OK
 	}
 
@@ -2525,12 +2522,12 @@ func (cnc *rs274ngc_t) convert_distance_mode( /* ARGUMENTS                    */
 	//static char name[] = "convert_distance_mode";
 	if g_code == inc.G_90 {
 		if cnc._setup.distance_mode != inc.MODE_ABSOLUTE {
-			cnc.canon.COMMENT([]byte("interpreter: distance mode changed to absolute"))
+			cnc.canon.COMMENT(("interpreter: distance mode changed to absolute"))
 			cnc._setup.distance_mode = inc.MODE_ABSOLUTE
 		}
 	} else if g_code == inc.G_91 {
 		if cnc._setup.distance_mode != inc.MODE_INCREMENTAL {
-			cnc.canon.COMMENT([]byte("interpreter: distance mode changed to incremental"))
+			cnc.canon.COMMENT(("interpreter: distance mode changed to incremental"))
 			cnc._setup.distance_mode = inc.MODE_INCREMENTAL
 		}
 	} else {
@@ -2565,10 +2562,10 @@ func (cnc *rs274ngc_t) convert_retract_mode( /* ARGUMENTS                    */
 
 	//static char name[] = "convert_retract_mode";
 	if g_code == inc.G_98 {
-		cnc.canon.COMMENT([]byte("interpreter: retract mode set to old_z"))
+		cnc.canon.COMMENT(("interpreter: retract mode set to old_z"))
 		cnc._setup.retract_mode = inc.OLD_Z
 	} else if g_code == inc.G_99 {
-		cnc.canon.COMMENT([]byte("interpreter: retract mode set to r_plane"))
+		cnc.canon.COMMENT(("interpreter: retract mode set to r_plane"))
 		cnc._setup.retract_mode = inc.R_PLANE
 	} else {
 		return inc.NCE_BUG_CODE_NOT_G98_OR_G99
@@ -2655,7 +2652,7 @@ func (cnc *rs274ngc_t) convert_motion( /* ARGUMENTS                             
 	} else if motion == inc.G_38_2 {
 		cnc.convert_probe()
 	} else if motion == inc.G_80 {
-		cnc.canon.COMMENT([]byte("interpreter: motion mode set to none"))
+		cnc.canon.COMMENT(("interpreter: motion mode set to none"))
 		cnc._setup.motion_mode = inc.G_80
 	} else if (motion > inc.G_80) && (motion < inc.G_90) {
 		cnc.convert_cycle(motion)
@@ -2786,7 +2783,7 @@ func (cnc *rs274ngc_t) convert_setup() inc.STATUS {
 			b+cnc._setup.axis_offset.B,
 			c+cnc._setup.axis_offset.C)
 	} else {
-		cnc.canon.COMMENT([]byte("interpreter: setting coordinate system origin"))
+		cnc.canon.COMMENT(("interpreter: setting coordinate system origin"))
 
 	}
 	return inc.RS274NGC_OK
@@ -3208,7 +3205,7 @@ func (cnc *rs274ngc_t) find_ends( /* ARGUMENTS                                  
 	comp := (cnc._setup.cutter_comp_side != inc.CANON_SIDE_OFF)
 
 	if cnc._setup.block1.g_modes[0] == inc.G_53 { /* distance mode is absolute in this case */
-		cnc.canon.COMMENT([]byte("interpreter: offsets temporarily suspended"))
+		cnc.canon.COMMENT(("interpreter: offsets temporarily suspended"))
 
 		*px = inc.If(cnc._setup.block1.x_flag == ON, (cnc._setup.block1.x_number -
 			(cnc._setup.origin_offset.X + cnc._setup.axis_offset.X)), cnc._setup.current.X).(float64)

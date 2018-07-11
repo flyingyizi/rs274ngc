@@ -1868,7 +1868,7 @@ func read_real_number( /* ARGUMENTS                               */
 		return inc.NCE_NO_DIGITS_FOUND_WHERE_REAL_NUMBER_SHOULD_BE
 	}
 	line[n] = 0 /* temporary string termination for sscanf */
-	if i, _ := fmt.Sscanf(string(line[*counter:]), "%lf", double_ptr); i == 0 {
+	if i, _ := fmt.Sscanf(string(line[*counter:]), "%f", double_ptr); i == 0 {
 		line[n] = c
 		return inc.NCE_SSCANF_FAILED
 	} else {
