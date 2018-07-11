@@ -12,8 +12,6 @@ import (
 	"github.com/flyingyizi/rs274ngc/inc"
 )
 
-var cnc = &Rs274ngc_t{}
-
 /************************************************************************/
 
 /* main
@@ -84,49 +82,7 @@ var cnc = &Rs274ngc_t{}
 
 */
 
-/*
-命令行参数的格式可以是：
--flag xxx （使用空格，一个 - 符号）
---flag xxx （使用空格，两个 - 符号）
--flag=xxx （使用等号，一个 - 符号）
---flag=xxx （使用等号，两个 - 符号）
-其中，布尔类型的参数防止解析时的二义性，应该使用等号的方式指定。
-*/
-
 func main() {
-	//go run flag.go -id=2 -name="golang"
-	//ok := flag.Bool("ok", false, "is ok")
-	//id := flag.Int("id", 0, "id")
-	//port := flag.String("port", ":8080", "http listen port")
-	//var name string
-	//flag.StringVar(&name, "name", "123", "name")
-	//
-	//flag.Parse()
-	//
-	//    // After parsing, the arguments after the flag are available as the slice flag.Args() or individually as flag.Arg(i). The arguments are indexed from 0 through flag.NArg()-1
-	//    // Args returns the non-flag command-line arguments
-	//    // NArg is the number of arguments remaining after flags have been processed
-	//    fmt.Printf("args=%s, num=%d\n", flag.Args(), flag.NArg())
-	//    for i := 0; i != flag.NArg(); i++ {
-	//        fmt.Printf("arg[%d]=%s\n", i, flag.Arg(i))
-	//    }
-
-	//fmt.Println("ok:", *ok)
-	//fmt.Println("id:", *id)
-	//fmt.Println("port:", *port)
-	//fmt.Println("name:", name)
-
-	//	   int status;
-	//	   int choice;
-	//	   int do_next;                                  /* 0=continue, 1=mdi, 2=stop */
-	//	   int block_delete;
-	//	   char buffer[80];
-	//	   int tool_flag;
-	//	   int gees[RS274NGC_ACTIVE_G_CODES];
-	//	   int ems[RS274NGC_ACTIVE_M_CODES];
-	//	   double sets[RS274NGC_ACTIVE_SETTINGS];
-	//	   char default_name[] = "rs274ngc.var";
-	//	   int print_stack;
 
 	flag.Parse()
 
@@ -140,82 +96,81 @@ func main() {
 	var (
 		block_delete ON_OFF = OFF
 		print_stack  ON_OFF = OFF
-		//choice       int
-		//tool_flag    = 0
-		do_next = 2 /* 2=stop */
-		//default_name = "rs274ngc.var"
-		//err          error
+		choice       int
+		tool_flag    = 0
+		do_next      = 2 /* 2=stop */
+		default_name = "rs274ngc.var"
+		err          error
 		//_outfile     = os.Stdout /* may be reset below */
 		status int
 	)
-	//_parameter_file_name := default_name
-	//	for {
-	//		fmt.Println("enter a number:")
-	//		fmt.Println("1 = start interpreting")
-	//		fmt.Println("2 = choose parameter file ...")
-	//		fmt.Println("3 = read tool file ...")
-	//		fmt.Println("4 = turn block delete switch %s",
-	//			inc.If((block_delete == OFF), "ON", "OFF").(string))
-	//
-	//		fmt.Println("5 = adjust error handling...")
-	//		fmt.Println("enter choice => ")
-	//
-	//		if _, err := fmt.Scanf("%d", &choice); err != nil {
-	//			continue
-	//		}
-	//
-	//		if choice == 1 {
-	//			break
-	//		} else if choice == 2 {
-	//			_, err := os.Stat(_parameter_file_name)
-	//			if os.IsNotExist(err) {
-	//				return
-	//			}
-	//
-	//		} else if choice == 3 {
-	//			if read_tool_file("") != 0 {
-	//				return
-	//			}
-	//			tool_flag = 1
-	//		} else if choice == 4 {
-	//			block_delete = inc.If((block_delete == OFF), ON, OFF).(ON_OFF)
-	//		} else if choice == 5 {
-	//			//todo adjust_error_handling(argc, &print_stack, &do_next);
-	//		}
-	//
-	//	}
-	//
-	//	fmt.Println("executing")
-	//	if tool_flag == 0 {
-	//		if s := read_tool_file("rs274ngc.tool_default"); s != 0 {
-	//			return
-	//		}
-	//	}
-	//
-	//	if len(os.Args) == 3 {
-	//		//TODO
-	//		//_outfile, err = os.OpenFile(os.Args[2], os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	//		//if err != nil {
-	//		//	fmt.Println("could not open output file %s", os.Args[2])
-	//		//	return
-	//		//}
-	//	}
+
+	_parameter_file_name := default_name
+	for {
+		fmt.Println("enter a number:")
+		fmt.Println("1 = start interpreting")
+		fmt.Println("2 = choose parameter file ...")
+		fmt.Println("3 = read tool file ...")
+		fmt.Println("4 = turn block delete switch %s",
+			inc.If((block_delete == OFF), "ON", "OFF").(string))
+
+		fmt.Println("5 = adjust error handling...")
+		fmt.Println("enter choice => ")
+
+		if _, err := fmt.Scanf("%d", &choice); err != nil {
+			continue
+		}
+
+		if choice == 1 {
+			break
+		} else if choice == 2 {
+			_, err := os.Stat(_parameter_file_name)
+			if os.IsNotExist(err) {
+				return
+			}
+
+		} else if choice == 3 {
+			if cnc.read_tool_file("") != 0 {
+				return
+			}
+			tool_flag = 1
+		} else if choice == 4 {
+			block_delete = inc.If((block_delete == OFF), ON, OFF).(ON_OFF)
+		} else if choice == 5 {
+			//todo adjust_error_handling(argc, &print_stack, &do_next);
+		}
+
+	}
+
+	fmt.Println("executing")
+	if tool_flag == 0 {
+		if s := cnc.read_tool_file("rs274ngc.tool_default"); s != 0 {
+			return
+		}
+	}
+
+	if len(os.Args) == 3 {
+		/*_outfile*/ _, err = os.OpenFile(os.Args[2], os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			fmt.Println("could not open output file %s", os.Args[2])
+			return
+		}
+	}
 
 	cnc.SetCanon(&canon.Canon_t{})
 	if status := cnc.Init(); status != inc.RS274NGC_OK {
 		return
 	}
 
-	//TODO
 	if len(os.Args) == 1 {
-		status = interpret_from_keyboard(block_delete, print_stack)
+		status = cnc.interpret_from_keyboard(block_delete, print_stack)
 	} else { /* if (argc == 2 or argc == 3) */
 		status = cnc.Open(os.Args[1])
 		if status != inc.RS274NGC_OK { /* do not need to close since not open */
-			report_error(status, print_stack)
+			cnc.report_error(status, print_stack)
 			return
 		}
-		status = interpret_from_file(do_next, block_delete, print_stack)
+		status = cnc.interpret_from_file(do_next, block_delete, print_stack)
 		//todo rs274ngc_file_name(buffer, 5)  /* called to exercise the function */
 		//todo rs274ngc_file_name(buffer, 79) /* called to exercise the function */
 		cnc.Close()
@@ -231,12 +186,28 @@ func main() {
 }
 
 var (
-	_tool_max = 68                                     /*Not static. Driver reads  */
-	_tools    [inc.CANON_TOOL_MAX]inc.CANON_TOOL_TABLE /*Not static. Driver writes */
+	_tool_max = 68 /*Not static. Driver reads  */
 
 )
 
+type CNC struct {
+	Rs274ngc_t
+	_tools [inc.CANON_TOOL_MAX]inc.CANON_TOOL_TABLE /*Not static. Driver writes */
+}
+
+var cnc = CNC{}
+
 /*********************************************************************/
+func (c *CNC) init() {
+	c.SetCanon(&canon.Canon_t{})
+}
+
+func (c *CNC) open(filename string) inc.STATUS {
+	if len(filename) == 0 {
+		return c.Open("cds-sample.ngc")
+	}
+	return c.Open(filename)
+}
 
 /* interpret_from_file
 
@@ -269,7 +240,7 @@ var (
 
 */
 
-func interpret_from_file( /* ARGUMENTS                  */
+func (c *CNC) interpret_from_file( /* ARGUMENTS                  */
 	do_next int, /* what to do if error        */
 	block_delete, /* switch which is ON or OFF  */
 	print_stack ON_OFF) inc.STATUS { /* option which is ON or OFF  */
@@ -281,7 +252,7 @@ func interpret_from_file( /* ARGUMENTS                  */
 	stdin := bufio.NewReader(os.Stdin)
 
 	for {
-		status = cnc.Read(nil)
+		status = c.Read(nil)
 		if (status == inc.RS274NGC_EXECUTE_FINISH) && (block_delete == ON) {
 			continue
 		} else if status == inc.RS274NGC_ENDFILE {
@@ -290,14 +261,14 @@ func interpret_from_file( /* ARGUMENTS                  */
 
 		if (status != inc.RS274NGC_OK) && // should not be EXIT
 			(status != inc.RS274NGC_EXECUTE_FINISH) {
-			report_error(status, print_stack)
+			c.report_error(status, print_stack)
 			if (status == inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN) ||
 				(do_next == 2) { /* 2 means stop */
 				status = 1
 				break
 			} else if do_next == 1 { /* 1 means MDI */
 				fmt.Fprintf(os.Stderr, "starting MDI\n")
-				interpret_from_keyboard(block_delete, print_stack)
+				c.interpret_from_keyboard(block_delete, print_stack)
 				fmt.Fprintf(os.Stderr, "continue program? y/n =>")
 
 				line, _, _ := stdin.ReadLine()
@@ -311,15 +282,15 @@ func interpret_from_file( /* ARGUMENTS                  */
 				continue
 			}
 		}
-		status = cnc.Execute()
+		status = c.Execute()
 		if (status != inc.RS274NGC_OK) &&
 			(status != inc.RS274NGC_EXIT) &&
 			(status != inc.RS274NGC_EXECUTE_FINISH) {
-			report_error(status, print_stack)
+			c.report_error(status, print_stack)
 			status = 1
 			if do_next == 1 { /* 1 means MDI */
 				fmt.Fprintf(os.Stderr, "starting MDI\n")
-				interpret_from_keyboard(block_delete, print_stack)
+				c.interpret_from_keyboard(block_delete, print_stack)
 				fmt.Fprintf(os.Stderr, "continue program? y/n =>")
 				line, _, _ := stdin.ReadLine()
 				if line[0] != 'y' {
@@ -370,7 +341,7 @@ func interpret_from_file( /* ARGUMENTS                  */
 
 */
 
-func read_tool_file(file_name string) int { /* name of tool file */
+func (c *CNC) read_tool_file(file_name string) int { /* name of tool file */
 
 	var (
 		tool_file_port *os.File
@@ -406,8 +377,8 @@ func read_tool_file(file_name string) int { /* name of tool file */
 	for slot := 0; slot <= _tool_max; slot++ /* initialize */ {
 
 		//todo _tools[slot].id = -1
-		_tools[slot].Length = 0
-		_tools[slot].Diameter = 0
+		c._tools[slot].Length = 0
+		c._tools[slot].Diameter = 0
 	}
 
 	reader := bufio.NewReader(tool_file_port)
@@ -438,8 +409,8 @@ func read_tool_file(file_name string) int { /* name of tool file */
 			return -1
 		}
 		//todo _tools[slot].id = tool_id
-		_tools[slot].Length = offset
-		_tools[slot].Diameter = diameter
+		c._tools[slot].Length = offset
+		c._tools[slot].Diameter = diameter
 
 	}
 	return 0
@@ -469,7 +440,7 @@ func read_tool_file(file_name string) int { /* name of tool file */
    To exit, the user must enter "quit" (followed by a carriage return).
 
 */
-func interpret_from_keyboard( /* ARGUMENTS                 */
+func (c *CNC) interpret_from_keyboard( /* ARGUMENTS                 */
 	block_delete ON_OFF, /* switch which is ON or OFF */
 	print_stack ON_OFF) int { /* option which is ON or OFF */
 
@@ -485,28 +456,28 @@ func interpret_from_keyboard( /* ARGUMENTS                 */
 			return 0
 		}
 
-		status := cnc.Read(line)
+		status := c.Read(line)
 		if (status == inc.RS274NGC_EXECUTE_FINISH) && (block_delete == ON) {
 
 		} else if status == inc.RS274NGC_ENDFILE {
 
 		} else if (status != inc.RS274NGC_EXECUTE_FINISH) &&
 			(status != inc.RS274NGC_OK) {
-			report_error(status, print_stack)
+			c.report_error(status, print_stack)
 		} else {
-			status = cnc.Execute()
+			status = c.Execute()
 			if (status == inc.RS274NGC_EXIT) ||
 				(status == inc.RS274NGC_EXECUTE_FINISH) {
 
 			} else if status != inc.RS274NGC_OK {
-				report_error(status, print_stack)
+				c.report_error(status, print_stack)
 
 			}
 		}
 	}
 }
 
-func report_error( /* ARGUMENTS                            */
+func (c *CNC) report_error( /* ARGUMENTS                            */
 	error_code int, /* the code number of the error message */
 	print_stack ON_OFF) { /* print stack if ON, otherwise not     */
 
@@ -520,7 +491,7 @@ func report_error( /* ARGUMENTS                            */
 		fmt.Fprintf(os.Stderr, "%s\n", buffer)
 	}
 
-	fmt.Fprintf(os.Stderr, "%s\n", cnc.LineText())
+	fmt.Fprintf(os.Stderr, "%s\n", c.LineText())
 
 	//	if print_stack == rs274ngc.ON {
 	//		for k := 0; ; k++ {
