@@ -16,6 +16,7 @@ func TestCNC_interpret_from_file(t *testing.T) {
 	}
 	var cnc = CNC{}
 	cnc.init()
+	cnc.open("")
 
 	tests := []struct {
 		name string

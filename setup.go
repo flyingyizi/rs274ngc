@@ -1,6 +1,7 @@
 package rs274ngc
 
 import (
+	"bufio"
 	"os"
 
 	"github.com/flyingyizi/rs274ngc/inc"
@@ -44,8 +45,8 @@ type Setup_t struct {
 	feed_override     ON_OFF            // whether feed override is enabled
 	feed_rate         float64           // feed rate in current units/min
 
-	filename     string   // name of currently open NC code file
-	file_pointer *os.File // file pointer for open NC code file
+	filename     string // name of currently open NC code file
+	file_pointer MyFile // file pointer for open NC code file
 
 	coolant struct {
 		flood ON_OFF // whether flood coolant is on
@@ -228,4 +229,46 @@ func (settings *Setup_t) Write_settings() int {
 	settings.active_settings[2] = settings.speed                    /* 2 spindle speed   */
 
 	return inc.RS274NGC_OK
+}
+
+type MyFile struct {
+	f        *os.File
+	R        *bufio.Reader
+	Filename string
+}
+
+func (my *MyFile) IsInited() bool {
+	if my.f != nil {
+		return true
+	} else {
+		return false
+	}
+}
+func (my *MyFile) Reset() {
+	my.f.Seek(0, 0)
+	my.R.Reset(my.f)
+}
+func (my *MyFile) Init(filename string) inc.STATUS {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return inc.NCE_UNABLE_TO_OPEN_FILE
+	}
+
+	if my.f != nil {
+		my.f.Close()
+	}
+
+	if f, err := os.Open(filename); err != nil {
+		return inc.NCE_UNABLE_TO_OPEN_FILE
+	} else {
+		my.f = f
+	}
+	my.R = bufio.NewReader(my.f)
+	return inc.RS274NGC_OK
+}
+
+func (my *MyFile) Close() {
+	my.f.Close()
+	my.f = nil
+	my.R = nil
+	my.Filename = ""
 }

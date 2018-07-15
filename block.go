@@ -1,8 +1,8 @@
 package rs274ngc
 
 import (
-	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/flyingyizi/rs274ngc/inc"
@@ -29,6 +29,20 @@ import (
    group 13 - gez[11] g61, g61.1, g64 - control mode
 
 */
+var _gees map[int]int = map[int]int{ /*key:code, value:group*/
+	40: 0, 100: 0, 280: 0, 300: 0, 530: 0, 920: 0, 921: 0, 922: 0, 923: 0,
+	0: 1, 10: 1, 20: 1, 30: 1, 382: 1, 800: 1, 810: 1, 820: 1, 830: 1, 840: 1, 850: 1,
+	170: 2, 180: 2, 190: 2,
+	900: 3, 910: 3,
+	930: 5, 940: 5,
+	200: 6, 210: 6,
+	400: 7, 410: 7, 420: 7,
+	430: 8, 490: 8,
+	980: 10, 990: 10,
+	540: 12, 550: 12, 560: 12, 570: 12, 580: 12, 590: 12, 591: 12, 592: 12, 593: 12,
+
+	610: 13, 611: 13, 640: 13}
+
 type GModalGroup int
 
 const (
@@ -49,61 +63,7 @@ const (
 	//MCodeToolChange           = 6
 	//MCodeSpindleTurning       = 7
 	//MCodeCoolant              = 8
-	//MCodeSpeedOverrideSwitchs = 9
-)
-
-var (
-	_gees = [...]int{
-		/*   0 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/*  20 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/*  40 */ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/*  60 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/*  80 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 100 */ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 120 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 140 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 160 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 180 */ 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 200 */ 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 220 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 240 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 260 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 280 */ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 300 */ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 320 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 340 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 360 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 380 */ -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 400 */ 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 420 */ 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 440 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 460 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 480 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 500 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 520 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 540 */ 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 560 */ 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 580 */ 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, 12, 12, 12, 12, -1, -1, -1, -1, -1, -1,
-		/* 600 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 13, 13, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 620 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 640 */ 13, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 660 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 680 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 700 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 720 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 740 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 760 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 780 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 800 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 820 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 840 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 860 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 880 */ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 900 */ 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 920 */ 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 940 */ 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 960 */ 14, -1, -1, -1, -1, -1, -1, -1, -1, -1, 14, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-		/* 980 */ 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+	//MCodeSpeedOverrideSwitch = 9
 )
 
 /*
@@ -121,17 +81,12 @@ var (
    group 9 = {m48,m49}          - feed and speed override switch bypass
 
 */
-var _ems = [...]int{
-	4, 4, 4, 7, 7, 7, 6, 8, 8, 8,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	4, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, 9, 9,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	4, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+var _ems map[int]int = map[int]int{ /*key:code, value:group*/
+	0: 4, 1: 4, 2: 4, 30: 4, 60: 4,
+	6: 6,
+	3: 7, 4: 7, 5: 7,
+	7: 8, 8: 8, 9: 8,
+	48: 9, 49: 9}
 
 type ON_OFF bool
 
@@ -683,6 +638,7 @@ func (block *Block_t) Read_items( /* ARGUMENTS                                  
 
 	length := len(line)
 	counter := 0
+	s := inc.RS274NGC_OK
 
 	l := []byte(line)
 
@@ -690,10 +646,14 @@ func (block *Block_t) Read_items( /* ARGUMENTS                                  
 		counter++
 	}
 	if l[counter] == 'n' {
-		block.read_line_number(l, &counter)
+		if s = block.read_line_number(l, &counter); s != inc.RS274NGC_OK {
+			return s
+		}
 	}
 	for counter < length {
-		block.read_one_item(tool_max, l, &counter, parameters)
+		if s = block.read_one_item(tool_max, l, &counter, parameters); s != inc.RS274NGC_OK {
+			return s
+		}
 	}
 
 	return inc.RS274NGC_OK
@@ -742,7 +702,7 @@ func (block *Block_t) read_line_number( /* ARGUMENTS                            
 	} else if value > 99999 {
 		return inc.NCE_LINE_NUMBER_GREATER_THAN_99999
 	} else {
-		block.line_number = value
+		block.line_number = int(value)
 	}
 
 	return inc.RS274NGC_OK
@@ -773,30 +733,34 @@ func (block *Block_t) read_line_number( /* ARGUMENTS                            
 
 func (block *Block_t) read_integer_unsigned( /* ARGUMENTS                       */
 	line []byte, /* string: line of RS274 code being processed    */
-	counter *int /* pointer to a counter for position on the line */) (v int, s inc.STATUS) { /*  the value being read               */
+	counter *int /* pointer to a counter for position on the line */) (vaule uint64, s inc.STATUS) { /*  the value being read               */
 
 	//static char name[] SET_TO "read_integer_unsigned";
 	//int n;
 	var (
-		c byte
-		n int
+		temp string
+		err  error
 	)
-	for n := *counter; ; n++ {
-		c = line[n]
-		if (c < 48) || (c > 57) {
+
+	for i, v := range line[*counter:] {
+		if (v < 48 /*'0'*/) || (v > 57 /*'9'*/) {
+			if i == 0 {
+				s = inc.NCE_BAD_FORMAT_UNSIGNED_INTEGER
+				return
+			}
+			temp = string(line[*counter : *counter+i])
+
 			break
 		}
 	}
-	if n == *counter {
-		return 0, inc.NCE_BAD_FORMAT_UNSIGNED_INTEGER
-	}
 
-	if _, err := fmt.Sscanf(string(line[*counter:]), "%d", &v); err != nil {
-		return 0, inc.NCE_SSCANF_FAILED
+	if vaule, err = strconv.ParseUint(temp, 10, 64); err != nil {
+		s = inc.NCE_SSCANF_FAILED
+		return
 	}
-
-	*counter = n
-	return 0, inc.RS274NGC_OK
+	*counter = *counter + len(temp)
+	s = inc.RS274NGC_OK
+	return
 }
 
 /****************************************************************************/
@@ -1190,23 +1154,19 @@ func (block *Block_t) read_comment( /* ARGUMENTS                                
 	counter *int, /* pointer to a counter for position on the line  */
 	parameters []float64) inc.STATUS { /* array of system parameters                     */
 
-	var (
-		n   = 0
-		str string
-	)
+	n := *counter
 
-	if line[*counter] != '(' {
+	if line[n] != '(' {
 		return inc.NCE_BUG_FUNCTION_SHOULD_NOT_HAVE_BEEN_CALLED
 	}
-	(*counter)++
+	n++
 
-	for n = 0; line[*counter] != ')'; {
-		str = str + string(line[*counter])
-		(*counter)++
-		n++
+	for ; line[n] != ')'; n++ {
+		//str = str + string(line[*counter])
+		//(*counter)++
 	}
-	block.comment = str
-	(*counter)++
+	block.comment = string(line[*counter : n+1])
+	*counter = n + 1
 
 	return inc.RS274NGC_OK
 }
@@ -1399,8 +1359,8 @@ func (block *Block_t) read_g( /* ARGUMENTS                                      
 		return inc.NCE_NEGATIVE_G_CODE_USED
 	}
 
-	mode := _gees[value]
-	if mode == -1 {
+	mode, ok := _gees[value]
+	if ok == false {
 		return inc.NCE_UNKNOWN_G_CODE_USED
 	}
 	if block.g_modes[mode] != -1 {
@@ -1822,61 +1782,53 @@ handle.
 func read_real_number( /* ARGUMENTS                               */
 	line []byte, /* string: line of RS274/NGC code being processed */
 	counter *int, /* pointer to a counter for position on the line  */
-	double_ptr *float64) inc.STATUS { /* pointer to double to be read                   */
+	double_ptr *float64) (s inc.STATUS) { /* pointer to double to be read                   */
 
-	//        static char name[] SET_TO "read_real_number";
-	//       char c;                                   /* for character being processed    */
-	//       int flag_digit;                           /* set to ON if digit found         */
-	//       int flag_point;                           /* set to ON if decimal point found */
-	//       int n;                                    /* for indexing line                */
-	//
 	var (
 		i          = 0
-		n          = *counter
 		flag_point = OFF
 		flag_digit = OFF
 	)
 
 	/* check first character */
-	c := line[n]
-	if c == '+' {
-		*counter = (*counter + 1) /* skip plus sign */
-		n++
-	} else if c == '-' {
-		n++
-	} else if (c != '.') && ((c < 48) || (c > 57)) {
+	temp := string(line[*counter:])
+	c := temp[0]
+	if c == '+' || c == '-' || c == '.' {
+	} else if !((47 < c) && (c < 58)) { // not digit
 		return inc.NCE_BAD_NUMBER_FORMAT
 	}
 
 	/* check out rest of characters (must be digit or decimal point) */
-	for _, c := range line[n:] {
+	for i = 0; i < len(temp); i++ {
+		c := temp[i]
 		if (47 < c) && (c < 58) {
 			flag_digit = ON
 		} else if c == '.' {
 			if flag_point == OFF {
 				flag_point = ON
 			} else {
-				break /* two decimal points, error appears on reading next item */
+				s = inc.NCE_SSCANF_FAILED
+				return
 			}
 		} else {
 			break
 		}
 	}
-	n = n + i
+	*counter = *counter + i
+	temp = temp[:i]
 
 	if flag_digit == OFF {
 		return inc.NCE_NO_DIGITS_FOUND_WHERE_REAL_NUMBER_SHOULD_BE
 	}
-	line[n] = 0 /* temporary string termination for sscanf */
-	if i, _ := fmt.Sscanf(string(line[*counter:]), "%f", double_ptr); i == 0 {
-		line[n] = c
+	//line[n] = 0 /* temporary string termination for sscanf */
+	if v, e := strconv.ParseFloat(temp, 64); e != nil {
 		return inc.NCE_SSCANF_FAILED
 	} else {
-		line[n] = c
-		*counter = n
+		s = inc.RS274NGC_OK
+		*double_ptr = v
 	}
-	//TODO the deal maybe not right
-	return inc.RS274NGC_OK
+
+	return
 }
 
 /****************************************************************************/
@@ -2207,8 +2159,8 @@ func (block *Block_t) read_m( /* ARGUMENTS                                      
 		return inc.NCE_M_CODE_GREATER_THAN_99
 	}
 
-	mode := _ems[value]
-	if mode == -1 {
+	mode, ok := _ems[value]
+	if ok == false {
 		return inc.NCE_UNKNOWN_M_CODE_USED
 	}
 	if block.m_modes[mode] != -1 {

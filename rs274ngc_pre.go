@@ -200,55 +200,32 @@ func (cnc *rs274ngc_t) Open( /* ARGUMENTS                                     */
 	filename string) inc.STATUS { /* string: the name of the input NC-program file */
 
 	//static char name[] = "rs274ngc_open";
-	var (
-		err  error
-		line string
-	)
 
-	if cnc._setup.file_pointer != nil {
+	if cnc._setup.file_pointer.IsInited() == true {
 		return inc.NCE_A_FILE_IS_ALREADY_OPEN
 	}
 
-	if len(filename) > (inc.RS274NGC_TEXT_SIZE - 1) {
-		return inc.NCE_FILE_NAME_TOO_LONG
-	}
-	if cnc._setup.file_pointer, err = os.Open(filename); err != nil {
-		return inc.NCE_UNABLE_TO_OPEN_FILE
+	if s := cnc._setup.file_pointer.Init(filename); s != inc.RS274NGC_OK {
+		return s
 	}
 
-	var (
-		length int
-	)
-
-	r := bufio.NewReader(cnc._setup.file_pointer)
-
+	cnc._setup.percent_flag = OFF
 	for { /* skip blank lines */
-		if line, err = r.ReadString('\n'); err != nil {
+		if l, _ := cnc._setup.file_pointer.R.ReadBytes('\n'); len(l) == 0 {
 			return inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
-		}
-
-		line = strings.TrimSpace(line)
-		length = len(line)
-		if len(line) == 0 {
-			continue
-		}
-		if length == (inc.RS274NGC_TEXT_SIZE - 1) {
-			// line is too long. need to finish reading the line to recover
-			// could look for EOF
-			return inc.NCE_COMMAND_TOO_LONG
-		} else {
+		} else if l = bytes.TrimSpace(l); len(l) != 0 {
+			if l[0] == '%' {
+				cnc._setup.percent_flag = ON
+			}
 			break
 		}
 	}
-
-	if strings.HasPrefix(line, "%") {
-		cnc._setup.percent_flag = ON
-	} else {
-		cnc._setup.file_pointer.Seek(0, 0)
-		cnc._setup.percent_flag = OFF
+	if cnc._setup.percent_flag != ON {
+		cnc._setup.file_pointer.Reset()
 	}
 	cnc._setup.filename = filename
 	cnc._setup.sequence_number = 0
+
 	cnc.reset()
 	return inc.RS274NGC_OK
 }
@@ -268,10 +245,7 @@ func (cnc *rs274ngc_t) Open( /* ARGUMENTS                                     */
 */
 
 func (cnc *rs274ngc_t) Close() inc.STATUS {
-	if cnc._setup.file_pointer != nil {
-		cnc._setup.file_pointer.Close()
-		cnc._setup.file_pointer = nil
-	}
+	cnc._setup.file_pointer.Close()
 	cnc.reset()
 
 	return inc.RS274NGC_OK
@@ -320,12 +294,12 @@ func (cnc *rs274ngc_t) Read(command []byte) inc.STATUS { /* a string to read */
 		cnc.set_probe_data()
 		cnc._setup.probe_flag = OFF
 	}
-	if command == nil && nil == cnc._setup.file_pointer {
+	if command == nil && false == cnc._setup.file_pointer.IsInited() {
 		return inc.NCE_FILE_NOT_OPEN
 	}
 	var read_status inc.STATUS
 	cnc._setup.linetext, cnc._setup.blocktext, cnc._setup.line_length, read_status =
-		cnc.read_text(command, cnc._setup.file_pointer)
+		cnc.read_text(command)
 	if read_status == inc.RS274NGC_EXECUTE_FINISH || read_status == inc.RS274NGC_OK {
 		if cnc._setup.line_length != 0 {
 			cnc.parse_line( /*cnc._setup.blocktext*/ )
@@ -586,52 +560,45 @@ func (cnc *rs274ngc_t) set_probe_data() inc.STATUS { /* pointer to machine setti
 // line []byte array for input line to be processed in
 // length to be set
 func (cnc *rs274ngc_t) read_text( /* ARGUMENTS                                   */
-	command []byte, /* a string which has input text */
-	inport *os.File) (raw_line string, line string, length uint, s inc.STATUS) {
-
-	r := bufio.NewReader(cnc._setup.file_pointer)
+	command []byte /* a string which has input text */) (raw_line string, line string, length uint, s inc.STATUS) {
 
 	var (
-		l   string
 		err error
 	)
 
-	if nil == command {
-		if l, err = r.ReadString('\n'); err != nil {
+	if command == nil {
+		if raw_line, err = cnc._setup.file_pointer.R.ReadString('\n'); err != nil {
 			if cnc._setup.percent_flag == ON {
-				return "", "", 0, inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
+				s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
+				return
 			} else {
-				return "", "", 0, inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN_OR_PROGRAM_END
+				s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN_OR_PROGRAM_END
+				return
 			}
 		}
-		raw_line = l
-		l = strings.TrimSpace(l)
 
-		if len(l) == inc.RS274NGC_TEXT_SIZE { // line is too long. need to finish reading the line to recover
-			return raw_line, "", 0, inc.NCE_COMMAND_TOO_LONG
-		}
-		if l, s = close_and_downcase(l); s != inc.RS274NGC_OK {
-			return raw_line, "", 0, s
-		}
-		line = l
+		line = strings.TrimSpace(raw_line)
 
-		if 0 == strings.Compare(l, "%") && cnc._setup.percent_flag == ON {
-			return raw_line, "", 0, inc.RS274NGC_ENDFILE
+		if line, s = close_and_downcase(line); s != inc.RS274NGC_OK {
+			return
+		}
+		length = uint(len(line))
+		if line[0] == '%' && cnc._setup.percent_flag == ON {
+			s = inc.RS274NGC_ENDFILE
+			return
 		}
 	} else {
-		raw_line = string(command[:])
-		l = strings.TrimSpace(raw_line)
-
-		if len(l) >= inc.RS274NGC_TEXT_SIZE {
-			return raw_line, "", 0, inc.NCE_COMMAND_TOO_LONG
+		//if len(command) >= inc.RS274NGC_TEXT_SIZE {
+		//	return inc.NCE_COMMAND_TOO_LONG
+		//}
+		raw_line = string(command)
+		line = string(command)
+		if line, s = close_and_downcase(line); s != inc.RS274NGC_OK {
+			return
 		}
-
-		if l, s = close_and_downcase(l); s != inc.RS274NGC_OK {
-			return raw_line, "", 0, s
-		}
-		line = l
-
+		length = uint(len(line))
 	}
+
 	cnc._setup.sequence_number++
 	cnc._setup.block1.Parameter_occurrence = 0 /* initialize parameter buffer */
 
@@ -852,7 +819,7 @@ func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 	cnc._setup.feed_override = ON
 	//_setup.feed_rate set in rs274ngc_synch
 	cnc._setup.filename = ""
-	cnc._setup.file_pointer = nil
+	//cnc._setup.file_pointer = nil
 	//_setup.flood set in rs274ngc_synch
 	cnc._setup.length_offset_index = 1
 	//_setup.length_units set in rs274ngc_synch
@@ -1403,7 +1370,7 @@ func close_and_downcase( /* ARGUMENTS                   */
 	}
 
 	if comment {
-		return line, inc.NCE_UNCLOSED_COMMENT_FOUND
+		return t, inc.NCE_UNCLOSED_COMMENT_FOUND
 	}
 
 	return t, inc.RS274NGC_OK

@@ -87,9 +87,9 @@ func main() {
 	flag.Parse()
 
 	if len(os.Args) > 3 {
-		fmt.Println("Usage \"%s\"\n", os.Args[0])
-		fmt.Println("   or \"%s <input file>\"\n", os.Args[0])
-		fmt.Println("   or \"%s <input file> <output file>\"\n", os.Args[0])
+		fmt.Printf("Usage %s  \n", os.Args[0])
+		fmt.Printf("   or %s <input file>\n", os.Args[0])
+		fmt.Printf("   or %s <input file> <output file>  \n", os.Args[0])
 		return
 	}
 
@@ -111,7 +111,7 @@ func main() {
 		fmt.Println("1 = start interpreting")
 		fmt.Println("2 = choose parameter file ...")
 		fmt.Println("3 = read tool file ...")
-		fmt.Println("4 = turn block delete switch %s",
+		fmt.Printf("4 = turn block delete switch %s \n",
 			inc.If((block_delete == OFF), "ON", "OFF").(string))
 
 		fmt.Println("5 = adjust error handling...")
@@ -152,7 +152,7 @@ func main() {
 	if len(os.Args) == 3 {
 		/*_outfile*/ _, err = os.OpenFile(os.Args[2], os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
-			fmt.Println("could not open output file %s", os.Args[2])
+			fmt.Printf("could not open output file %s\n", os.Args[2])
 			return
 		}
 	}
@@ -205,8 +205,9 @@ func (c *CNC) init() {
 func (c *CNC) open(filename string) inc.STATUS {
 	if len(filename) == 0 {
 		return c.Open("cds-sample.ngc")
+	} else {
+		return c.Open(filename)
 	}
-	return c.Open(filename)
 }
 
 /* interpret_from_file
@@ -363,12 +364,12 @@ func (c *CNC) read_tool_file(file_name string) int { /* name of tool file */
 		data, _, _ := reader.ReadLine()
 
 		if tool_file_port, err = os.Open(string(data)); err != nil {
-			fmt.Println("Cannot open %s", data)
+			fmt.Println("Cannot open ", data)
 			return -1
 		}
 	} else {
 		if tool_file_port, err = os.Open(file_name); err != nil {
-			fmt.Println("Cannot open %s", file_name)
+			fmt.Println("Cannot open ", file_name)
 			return -1
 		}
 
@@ -384,7 +385,7 @@ func (c *CNC) read_tool_file(file_name string) int { /* name of tool file */
 	reader := bufio.NewReader(tool_file_port)
 	for {
 		if l, _, e := reader.ReadLine(); e != nil {
-			fmt.Println("Bad tool file format\n")
+			fmt.Println("Bad tool file format")
 		} else if len(l) == 0 {
 			break
 		}
@@ -400,12 +401,12 @@ func (c *CNC) read_tool_file(file_name string) int { /* name of tool file */
 			break
 		}
 		if n, _ := fmt.Sscanf(string(l), "%d %d %f %f", &slot, &tool_id, &offset, &diameter); n < 4 {
-			fmt.Println("Bad input line \"%s\" in tool file", string(l))
+			fmt.Printf("Bad input line \"%s\" in tool file", string(l))
 			return -1
 		}
 
 		if (slot < 0) || (slot > _tool_max) { /* zero and max both OK */
-			fmt.Println("Out of range tool slot number %d\n", slot)
+			fmt.Printf("Out of range tool slot number %d\n", slot)
 			return -1
 		}
 		//todo _tools[slot].id = tool_id
