@@ -200,6 +200,7 @@ var cnc = CNC{}
 /*********************************************************************/
 func (c *CNC) init() {
 	c.SetCanon(&canon.Canon_t{})
+	c.Init()
 }
 
 func (c *CNC) open(filename string) inc.STATUS {
@@ -304,7 +305,7 @@ func (c *CNC) interpret_from_file( /* ARGUMENTS                  */
 			break
 		}
 	}
-	return inc.If(status == 1, 1, 0).(int)
+	return inc.If(status == inc.RS274NGC_EXIT, inc.RS274NGC_EXIT, inc.RS274NGC_OK).(inc.STATUS)
 }
 
 /************************************************************************/

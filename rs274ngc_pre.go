@@ -337,7 +337,7 @@ func (cnc *rs274ngc_t) Read(command []byte) inc.STATUS { /* a string to read */
 
 func (cnc *rs274ngc_t) Execute() inc.STATUS { /* NO ARGUMENTS */
 
-	var status inc.STATUS
+	status := inc.RS274NGC_OK
 
 	if cnc._setup.line_length != 0 { /* line not blank */
 		for n := int64(0); n < cnc._setup.block1.Parameter_occurrence; n++ {
@@ -603,7 +603,11 @@ func (cnc *rs274ngc_t) read_text( /* ARGUMENTS                                  
 	cnc._setup.block1.Parameter_occurrence = 0 /* initialize parameter buffer */
 
 	// an optional block delete character, which is a slash “/” .
-	executeFinish := (line[0] == '/')
+	executeFinish := false
+	if 1 == len(line) && (line[0] == '/') {
+		executeFinish = true
+	}
+
 	if 0 == len(line) || (executeFinish && 1 == len(line)) {
 		length = 0
 	} else {

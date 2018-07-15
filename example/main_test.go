@@ -28,7 +28,7 @@ func TestCNC_interpret_from_file(t *testing.T) {
 		{name: "simple",
 			args: args{do_next: 1, block_delete: OFF, print_stack: OFF},
 			c:    &cnc,
-			want: inc.RS274NGC_OK},
+			want: inc.RS274NGC_EXIT},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
