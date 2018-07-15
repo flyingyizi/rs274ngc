@@ -651,9 +651,79 @@ func (block *Block_t) Read_items( /* ARGUMENTS                                  
 		}
 	}
 	for counter < length {
-		if s = block.read_one_item(tool_max, l, &counter, parameters); s != inc.RS274NGC_OK {
-			return s
+		///////////////////////
+		switch line[counter] {
+		case '#':
+			block.read_parameter_setting(l, &counter, parameters)
+			break
+		case '(':
+			block.read_comment(l, &counter, parameters)
+			break
+		case 'a': //A A-axis of machine
+			block.read_a(l, &counter, parameters)
+			break
+		case 'b':
+			block.read_b(l, &counter, parameters)
+			break
+		case 'c':
+			block.read_c(l, &counter, parameters)
+			break
+		case 'd':
+			block.read_d(l, &counter, parameters)
+			break
+		case 'f':
+			block.read_f(l, &counter, parameters)
+			break
+		case 'g':
+			block.read_g(l, &counter, parameters)
+			break
+		case 'h':
+			block.read_h(tool_max, l, &counter, parameters)
+			break
+		case 'i':
+			block.read_i(l, &counter, parameters)
+			break
+		case 'j':
+			block.read_j(l, &counter, parameters)
+			break
+		case 'k':
+			block.read_k(l, &counter, parameters)
+			break
+		case 'l':
+			block.read_l(l, &counter, parameters)
+			break
+		case 'm':
+			block.read_m(l, &counter, parameters)
+			break
+		case 'p':
+			block.read_p(l, &counter, parameters)
+			break
+		case 'q':
+			block.read_q(l, &counter, parameters)
+			break
+		case 'r':
+			block.read_r(l, &counter, parameters)
+			break
+		case 's':
+			block.read_s(l, &counter, parameters)
+			break
+		case 't':
+			block.read_t(l, &counter, parameters)
+			break
+		case 'x':
+			block.read_x(l, &counter, parameters)
+			break
+		case 'y':
+			block.read_y(l, &counter, parameters)
+			break
+		case 'z':
+			block.read_z(l, &counter, parameters)
+			break
+		default:
+			return inc.NCE_BAD_CHARACTER_USED
 		}
+
+		///////////////////////
 	}
 
 	return inc.RS274NGC_OK
@@ -761,177 +831,6 @@ func (block *Block_t) read_integer_unsigned( /* ARGUMENTS                       
 	*counter = *counter + len(temp)
 	s = inc.RS274NGC_OK
 	return
-}
-
-/****************************************************************************/
-
-/* read_items
-
-   Returned Value: int
-   If read_line_number or read_one_item returns an error code,
-   this returns that code.
-   Otherwise, it returns RS274NGC_OK.
-
-   Side effects:
-   One line of RS274 code is read and data inserted into a block.
-   The counter which is passed around among the readers is initialized.
-   System parameters may be reset.
-
-   Called by: parse_line
-
-*/
-
-func (block *Block_t) read_items( /* ARGUMENTS                                      */
-	tool_max uint,
-	line []byte, /* string: line of RS274/NGC code being processed */
-	parameters []float64) inc.STATUS { /* array of system parameters                     */
-
-	//static char name[] SET_TO "read_items";
-	//int counter;
-	//int length;
-	//int status;
-
-	var (
-		counter = 0
-		length  = len(line)
-	)
-	if line[counter] == '/' { /* skip the slash character if first */
-		counter++
-	}
-	if line[counter] == 'n' {
-		block.read_line_number(line, &counter)
-	}
-	for counter < length {
-		block.read_one_item(tool_max, line, &counter, parameters)
-	}
-	return inc.RS274NGC_OK
-}
-
-/****************************************************************************/
-
-/* read_one_item
-
-   Returned Value: int
-   If a reader function which is called returns an error code, that
-   error code is returned.
-   If any of the following errors occur, this returns the error code shown.
-   Otherwise, it returns RS274NGC_OK.
-   1. the first character read is not a known character for starting a
-   word: NCE_BAD_CHARACTER_USED
-
-   Side effects:
-   This function reads one item from a line of RS274/NGC code and inserts
-   the information in a block. System parameters may be reset.
-
-   Called by: read_items.
-
-   When this function is called, the counter is set so that the position
-   being considered is the first position of a word. The character at
-   that position must be one known to the system.  In this version those
-   characters are: a,b,c,d,f,g,h,i,j,k,l,m,n,p,q,r,s,t,x,y,z,(,#.
-   However, read_items calls read_line_number directly if the first word
-   begins with n, so no read function is included in the "_readers" array
-   for the letter n. Thus, if an n word is encountered in the middle of
-   a line, this function reports NCE_BAD_CHARACTER_USED.
-
-   The function looks for a letter or special character and calls a
-   selected function according to what the letter or character is.  The
-   selected function will be responsible to consider all the characters
-   that comprise the remainder of the item, and reset the pointer so that
-   it points to the next character after the end of the item (which may be
-   the end of the line or the first character of another item).
-
-   After an item is read, the counter is set at the index of the
-   next unread character. The item data is stored in the block.
-
-   It is expected that the format of a comment will have been checked;
-   this is being done by close_and_downcase. Bad format comments will
-   have prevented the system from getting this far, so that this function
-   can assume a close parenthesis will be found when an open parenthesis
-   has been found, and that comments are not nested.
-
-*/
-
-func (block *Block_t) read_one_item( /* ARGUMENTS                                      */
-	tool_max uint,
-	line []byte, /* string: line of RS274/NGC code being processed */
-	counter *int, /* pointer to a counter for position on the line  */
-	parameters []float64) inc.STATUS { /* array of system parameters                     */
-
-	//letter := line[*counter] /* check if in array range */
-
-	switch line[*counter] {
-	case '#':
-		block.read_parameter_setting(line, counter, parameters)
-		break
-	case '(':
-		block.read_comment(line, counter, parameters)
-		break
-	case 'a': //A A-axis of machine
-		block.read_a(line, counter, parameters)
-		break
-	case 'b':
-		block.read_b(line, counter, parameters)
-		break
-	case 'c':
-		block.read_c(line, counter, parameters)
-		break
-	case 'd':
-		block.read_d(line, counter, parameters)
-		break
-	case 'f':
-		block.read_f(line, counter, parameters)
-		break
-	case 'g':
-		block.read_g(line, counter, parameters)
-		break
-	case 'h':
-		block.read_h(tool_max, line, counter, parameters)
-		break
-	case 'i':
-		block.read_i(line, counter, parameters)
-		break
-	case 'j':
-		block.read_j(line, counter, parameters)
-		break
-	case 'k':
-		block.read_k(line, counter, parameters)
-		break
-	case 'l':
-		block.read_l(line, counter, parameters)
-		break
-	case 'm':
-		block.read_m(line, counter, parameters)
-		break
-	case 'p':
-		block.read_p(line, counter, parameters)
-		break
-	case 'q':
-		block.read_q(line, counter, parameters)
-		break
-	case 'r':
-		block.read_r(line, counter, parameters)
-		break
-	case 's':
-		block.read_s(line, counter, parameters)
-		break
-	case 't':
-		block.read_t(line, counter, parameters)
-		break
-	case 'x':
-		block.read_x(line, counter, parameters)
-		break
-	case 'y':
-		block.read_y(line, counter, parameters)
-		break
-	case 'z':
-		block.read_z(line, counter, parameters)
-		break
-	default:
-		return inc.NCE_BAD_CHARACTER_USED
-	}
-
-	return inc.RS274NGC_OK
 }
 
 /****************************************************************************/
@@ -1162,8 +1061,6 @@ func (block *Block_t) read_comment( /* ARGUMENTS                                
 	n++
 
 	for ; line[n] != ')'; n++ {
-		//str = str + string(line[*counter])
-		//(*counter)++
 	}
 	block.comment = string(line[*counter : n+1])
 	*counter = n + 1
@@ -1794,12 +1691,13 @@ func read_real_number( /* ARGUMENTS                               */
 	temp := string(line[*counter:])
 	c := temp[0]
 	if c == '+' || c == '-' || c == '.' {
+		i++
 	} else if !((47 < c) && (c < 58)) { // not digit
 		return inc.NCE_BAD_NUMBER_FORMAT
 	}
 
 	/* check out rest of characters (must be digit or decimal point) */
-	for i = 0; i < len(temp); i++ {
+	for ; i < len(temp); i++ {
 		c := temp[i]
 		if (47 < c) && (c < 58) {
 			flag_digit = ON

@@ -196,8 +196,7 @@ func (cnc *rs274ngc_t) SetCanon(c inc.Canon_i) {
    file.
 
 */
-func (cnc *rs274ngc_t) Open( /* ARGUMENTS                                     */
-	filename string) inc.STATUS { /* string: the name of the input NC-program file */
+func (cnc *rs274ngc_t) Open(filename string) inc.STATUS { /* string: the name of the input NC-program file */
 
 	//static char name[] = "rs274ngc_open";
 
@@ -209,21 +208,20 @@ func (cnc *rs274ngc_t) Open( /* ARGUMENTS                                     */
 		return s
 	}
 
-	cnc._setup.percent_flag = OFF
+	cnc._setup.file_pointer.Percent_flag = OFF
 	for { /* skip blank lines */
 		if l, _ := cnc._setup.file_pointer.R.ReadBytes('\n'); len(l) == 0 {
 			return inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
 		} else if l = bytes.TrimSpace(l); len(l) != 0 {
 			if l[0] == '%' {
-				cnc._setup.percent_flag = ON
+				cnc._setup.file_pointer.Percent_flag = ON
 			}
 			break
 		}
 	}
-	if cnc._setup.percent_flag != ON {
+	if cnc._setup.file_pointer.Percent_flag != ON {
 		cnc._setup.file_pointer.Reset()
 	}
-	cnc._setup.filename = filename
 	cnc._setup.sequence_number = 0
 
 	cnc.reset()
@@ -562,35 +560,11 @@ func (cnc *rs274ngc_t) set_probe_data() inc.STATUS { /* pointer to machine setti
 func (cnc *rs274ngc_t) read_text( /* ARGUMENTS                                   */
 	command []byte /* a string which has input text */) (raw_line string, line string, length uint, s inc.STATUS) {
 
-	var (
-		err error
-	)
-
 	if command == nil {
-		if raw_line, err = cnc._setup.file_pointer.R.ReadString('\n'); err != nil {
-			if cnc._setup.percent_flag == ON {
-				s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
-				return
-			} else {
-				s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN_OR_PROGRAM_END
-				return
-			}
-		}
-
-		line = strings.TrimSpace(raw_line)
-
-		if line, s = close_and_downcase(line); s != inc.RS274NGC_OK {
-			return
-		}
-		length = uint(len(line))
-		if line[0] == '%' && cnc._setup.percent_flag == ON {
-			s = inc.RS274NGC_ENDFILE
+		if raw_line, line, length, s = cnc._setup.file_pointer.Read_text(); s != inc.RS274NGC_OK {
 			return
 		}
 	} else {
-		//if len(command) >= inc.RS274NGC_TEXT_SIZE {
-		//	return inc.NCE_COMMAND_TOO_LONG
-		//}
 		raw_line = string(command)
 		line = string(command)
 		if line, s = close_and_downcase(line); s != inc.RS274NGC_OK {
@@ -615,7 +589,7 @@ func (cnc *rs274ngc_t) read_text( /* ARGUMENTS                                  
 	}
 	s = inc.If(executeFinish, inc.RS274NGC_EXECUTE_FINISH, inc.RS274NGC_OK).(inc.STATUS)
 
-	return //raw_line, line, length, inc.If(executeFinish, inc.RS274NGC_EXECUTE_FINISH, inc.RS274NGC_OK).(inc.STATUS)
+	return
 
 }
 
@@ -822,7 +796,6 @@ func (cnc *rs274ngc_t) Init() inc.STATUS { /* NO ARGUMENTS */
 	cnc._setup.feed_mode = inc.UNITS_PER_MINUTE
 	cnc._setup.feed_override = ON
 	//_setup.feed_rate set in rs274ngc_synch
-	cnc._setup.filename = ""
 	//cnc._setup.file_pointer = nil
 	//_setup.flood set in rs274ngc_synch
 	cnc._setup.length_offset_index = 1

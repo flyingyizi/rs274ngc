@@ -3,6 +3,8 @@ package rs274ngc
 import (
 	"bufio"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/flyingyizi/rs274ngc/inc"
 )
@@ -45,7 +47,7 @@ type Setup_t struct {
 	feed_override     ON_OFF            // whether feed override is enabled
 	feed_rate         float64           // feed rate in current units/min
 
-	filename     string // name of currently open NC code file
+	//filename     string // name of currently open NC code file
 	file_pointer MyFile // file pointer for open NC code file
 
 	coolant struct {
@@ -59,7 +61,6 @@ type Setup_t struct {
 	motion_mode         inc.GCodes      // active G-code for motion
 	origin_index        int             // active origin (1=G54 to 9=G59.3)
 	parameters          []float64       // system parameters
-	percent_flag        ON_OFF          // ON means first line was percent sign
 
 	plane              inc.CANON_PLANE  // active plane, XY-, YZ-, or XZ-plane
 	probe_flag         ON_OFF           // flag indicating probing done
@@ -232,9 +233,11 @@ func (settings *Setup_t) Write_settings() int {
 }
 
 type MyFile struct {
-	f        *os.File
-	R        *bufio.Reader
-	Filename string
+	f            *os.File
+	R            *bufio.Reader
+	Filename     string
+	Percent_flag ON_OFF // ON means first line was percent sign
+
 }
 
 func (my *MyFile) IsInited() bool {
@@ -271,4 +274,57 @@ func (my *MyFile) Close() {
 	my.f = nil
 	my.R = nil
 	my.Filename = ""
+}
+
+// inport *os.File,  a file pointer for an input file, or null
+//out put
+//raw_line []byte,  array to write raw input line into
+// line []byte array for input line to be processed in
+// length to be set
+func (my *MyFile) Read_text() (raw_line string, line string, length uint, s inc.STATUS) {
+
+	var (
+		err error
+	)
+	s = inc.RS274NGC_OK
+
+	if raw_line, err = my.R.ReadString('\n'); err != nil {
+		if my.Percent_flag == ON {
+			s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
+			return
+		} else {
+			s = inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN_OR_PROGRAM_END
+			return
+		}
+	}
+
+	str := regexp.MustCompile("\\s+").ReplaceAllString(raw_line, "")
+	line = strings.ToLower(str)
+	length = uint(len(line))
+	if line[0] == '%' && my.Percent_flag == ON {
+		s = inc.RS274NGC_ENDFILE
+		return
+	}
+
+	// confirm comment is valid
+	comment := false
+	for _, item := range line {
+		if comment {
+			if item == ')' {
+				comment = false
+			} else if item == '(' {
+				s = inc.NCE_NESTED_COMMENT_FOUND
+				return
+			}
+		} else if item == '(' { /* comment is starting */
+			comment = true
+		}
+	}
+
+	if comment {
+		s = inc.NCE_UNCLOSED_COMMENT_FOUND
+	}
+
+	return //raw_line, line, length, inc.If(executeFinish, inc.RS274NGC_EXECUTE_FINISH, inc.RS274NGC_OK).(inc.STATUS)
+
 }
