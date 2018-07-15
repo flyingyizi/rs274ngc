@@ -451,7 +451,7 @@ func (c *CNC) interpret_from_keyboard( /* ARGUMENTS                 */
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Println("READ => ")
+		fmt.Printf("READ => ")
 		line, _, _ := reader.ReadLine()
 
 		if bytes.ContainsAny(line, "quit") {

@@ -1,3 +1,4 @@
+%
 (Circle Diamond Square Program)
 (Tom Kramer)
 (26-Sep-1994)
@@ -7,7 +8,9 @@
 (Y: -0.250 to 3.915)
 (Z:  1.406 to 3.0)
 (Cutter does not descend more than 0.94" below top)
-n0080 G90 M9
+n0140 F16.0 S3500 M3
+n0080 G1 x asin[0.5]
+%
 n0090 G43 H1 g20
 n0140 F16.0 S3500 M3
 n0150 (MILLING AN ENCLOSED POCKET)

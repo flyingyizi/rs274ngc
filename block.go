@@ -1594,7 +1594,7 @@ func (block *Block_t) read_real_expression( /* ARGUMENTS                        
 	line []byte, /* string: line of RS274/NGC code being processed */
 	counter *int, /* pointer to a counter for position on the line  */
 	value *float64, /* pointer to double to be computed               */
-	parameters []float64) inc.STATUS { /* array of system parameters                     */
+	parameters []float64) (s inc.STATUS) { /* array of system parameters                     */
 
 	//static char name[] SET_TO "read_real_expression";
 
@@ -1608,8 +1608,12 @@ func (block *Block_t) read_real_expression( /* ARGUMENTS                        
 	}
 	*counter = (*counter + 1)
 
-	block.read_real_value(line, counter, &values[0], parameters)
-	block.read_operation(line, counter, &operators[0])
+	if s = block.read_real_value(line, counter, &values[0], parameters); s != inc.RS274NGC_OK {
+		return
+	}
+	if s = block.read_operation(line, counter, &operators[0]); s != inc.RS274NGC_OK {
+		return
+	}
 
 	stack_index := 1
 	for operators[0] != ops.RIGHT_BRACKET {
@@ -2697,9 +2701,9 @@ func (block *Block_t) read_operation( /* ARGUMENTS                              
 	counter *int, /* pointer to a counter for position on the line  */
 	operation *ops.Operation) inc.STATUS { /* pointer to operation to be read                */
 
-	//c := line[*counter];
+	c := line[*counter]
 	*counter = (*counter + 1)
-	switch line[*counter] {
+	switch c {
 	case '+':
 		*operation = ops.PLUS
 	case '-':

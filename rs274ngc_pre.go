@@ -213,7 +213,9 @@ func (cnc *rs274ngc_t) Open(filename string) inc.STATUS { /* string: the name of
 		if l, _ := cnc._setup.file_pointer.R.ReadBytes('\n'); len(l) == 0 {
 			return inc.NCE_FILE_ENDED_WITH_NO_PERCENT_SIGN
 		} else if l = bytes.TrimSpace(l); len(l) != 0 {
-			if l[0] == '%' {
+			if l = bytes.TrimSpace(l); len(l) == 0 {
+				continue
+			} else if l[0] == '%' {
 				cnc._setup.file_pointer.Percent_flag = ON
 			}
 			break
@@ -1848,6 +1850,7 @@ func (cnc *rs274ngc_t) convert_g() inc.STATUS {
 		cnc.convert_modal_0(cnc._setup.block1.g_modes[0])
 	}
 	if cnc._setup.block1.motion_to_be != -1 {
+		//fmt.Fprintf(os.Stdout, "%s %s", cnc._setup.linetext, "   ") //todo
 		cnc.convert_motion(cnc._setup.block1.motion_to_be)
 	}
 	return inc.RS274NGC_OK
@@ -2585,25 +2588,25 @@ func (cnc *rs274ngc_t) convert_modal_0( /* ARGUMENTS                            
 */
 
 func (cnc *rs274ngc_t) convert_motion( /* ARGUMENTS                                 */
-	motion inc.GCodes) inc.STATUS { /* g_code for a line, arc, canned cycle      */
+	motion inc.GCodes) (s inc.STATUS) { /* g_code for a line, arc, canned cycle      */
 
 	//static char name[] = "convert_motion";
-
+	s = inc.RS274NGC_OK
 	if (motion == inc.G_0) || (motion == inc.G_1) {
-		cnc.convert_straight(motion)
+		s = cnc.convert_straight(motion)
 	} else if (motion == inc.G_3) || (motion == inc.G_2) {
-		cnc.convert_arc(motion)
+		s = cnc.convert_arc(motion)
 	} else if motion == inc.G_38_2 {
-		cnc.convert_probe()
+		s = cnc.convert_probe()
 	} else if motion == inc.G_80 {
 		cnc.canon.COMMENT(("interpreter: motion mode set to none"))
 		cnc._setup.motion_mode = inc.G_80
 	} else if (motion > inc.G_80) && (motion < inc.G_90) {
-		cnc.convert_cycle(motion)
+		s = cnc.convert_cycle(motion)
 	} else {
-		return inc.NCE_BUG_UNKNOWN_MOTION_CODE
+		s = inc.NCE_BUG_UNKNOWN_MOTION_CODE
 	}
-	return inc.RS274NGC_OK
+	return
 }
 
 /****************************************************************************/
